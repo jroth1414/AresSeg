@@ -56,7 +56,9 @@ class SegDataset:
         return {
             "image": out["image"].float(),
             "mask": m,
-            "name": rec.get("name", str(i)),
+            # canonical camera-qualified join key (DEVPLAN 4.3) — a missing name is a hard error,
+            # never a positional fallback (cross-model joins would silently misalign)
+            "name": rec["name"],
             "rover": self.rover,
         }
 
