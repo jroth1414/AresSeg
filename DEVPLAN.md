@@ -19,37 +19,40 @@ conversation context**, given only this file + the repo, must reach the **same r
 H0–H5 verdicts** as any other agent. Every load-bearing constant is pinned below. Do not invent
 versions, paths, thresholds, or file names.
 
-**ONE-LINE STATUS (2026-06-30): MS0, MS1, and most of MS2 are BUILT AND VERIFIED (15 pytest tests
-green, ruff+black clean). RESUME POINT → (1) apply the two REQUIRED MS1/MS2 code fixes below
-(`build_index` camera/pairing fix + `name` join key), then (2) build `models/foundation.py`,
-`configs/*`, `eval/*`, and `scripts/{run_experiment,analyze_results,merge_results}.py` + `run_gpu.sh`
-(MS2 tail → MS3 → MS4 → MS5).**
+**ONE-LINE STATUS (2026-07-01): MS0 and MS1 are DONE (MS1 fixed + re-verified against the real
+on-disk layout: 16064/322/204 count asserts green; 27 pytest tests green, ruff+black clean); MS2 is
+PARTIAL. RESUME POINT → build `models/foundation.py` (MS2 tail), then `configs/*`, `eval/*`, and
+`scripts/{run_experiment,analyze_results,merge_results}.py` + `run_gpu.sh` (MS3 → MS4 → MS5).**
 
-> **⚠ TWO KNOWN CODE DEFECTS BLOCK ALL TRAINING — FIX FIRST (details in §4).** The DONE code below is
-> green on unit tests but is **NOT yet usable to train a real model**, because two MS1 functions do not
-> match the on-disk data:
-> 1. **`build_index` returns an EMPTY training index for MSL and an empty index for MER** (root cause +
->    exact fix in §4.1). It must be corrected and re-verified (`len(index["train"]) == 16064` for MSL
->    ncam) **before** MS1 may be re-declared DONE and before any `run_experiment.py` smoke can pass.
-> 2. **`build_index` records carry no `name`**, so the paired-bootstrap join key is unusable (§4.3).
+> **✅ RESOLVED (2026-07-01, branch `phase-ms1-fix`).** The two MS1 defects that blocked all training
+> are **fixed and re-verified against the on-disk dataset**:
+> 1. `build_index` is now camera-aware and ncam-scoped (§4.1): MSL ncam train=16064, test=322 (pinned
+>    **min3** by path, not sort order), MER train=[], test=204 — asserted by real-layout tests in
+>    `tests/test_data.py` (they skip when the dataset is absent so CI stays offline-green).
+> 2. Every record carries the canonical camera-qualified `name` join key (§4.3: `msl_ncam_…`,
+>    `mer_test_…`; unique, non-empty, sorted for cross-platform determinism), and
+>    `SegDataset.__getitem__` returns `rec["name"]` — a missing name is a hard `KeyError`, never a
+>    positional fallback.
 >
-> These are promoted to **hard prerequisites of the first training run** (not deferred to "hardening").
-> Do not present any MS4 run command as runnable until §4.1, §4.3, and all of MS3 are built.
+> Training remains gated only on MS3 (`configs/*`, `eval/*`, `run_experiment.py`) being built.
 
 - **Branches.** `main` is the **canonical branch** and contains everything through this hardened plan
   (MS0–MS2 code + the DEVPLAN); `ms2-models` is kept as a mirror at the same commit. **A fresh checkout
   of `main` matches this plan — no branch switch is needed.** Every commit is authored by **John Roth**
   only (no AI co-authors). Branch new phase work off `main` (e.g. `phase-ms3-eval`).
   `project/ntl-sector-etf-forecasting` is an unrelated archived project — ignore it.
-- **DONE (do NOT rebuild — but see the two defects above):**
+- **DONE (do NOT rebuild):**
   - `src/marsseg/utils/*` (seed, config, manifest, results, tracking, logging, capabilities)
-  - `src/marsseg/data/{ai4mars,dataset,transforms}.py` — **`ai4mars.build_index` needs the §4.1 + §4.3
-    fixes; `dataset.SegDataset` needs the §4.3 `name` fix.**
+  - `src/marsseg/data/{ai4mars,dataset,transforms}.py` — **§4.1 + §4.3 fixes APPLIED 2026-07-01**
+    (camera-aware ncam-scoped `build_index`, `label_key` stem normalizer, pinned min3 gold dir,
+    camera-qualified `name` join key; `SegDataset` returns `rec["name"]`, no fallback).
   - `src/marsseg/models/zoo.py` (baseline / unet / deeplabv3plus / segformer)
   - `src/marsseg/train/{loss,lit}.py` (PyTorch Lightning)
   - `scripts/{check_env,download_data}.py`
-  - `tests/{test_smoke,test_data,test_models}.py` — **15 tests pass** (they use a synthetic fixture, so
-    they do NOT exercise the real nested layout — that is why the §4.1 defect slipped through).
+  - `tests/{test_smoke,test_data,test_models}.py` — **27 tests pass**, including real-layout count
+    asserts (16064/322/204, min3-by-path, unique camera-qualified names) that run on this box and
+    skip offline, plus regression fixtures for the two §4.1 bugs (camera decoy, MER pools/stems)
+    and the min1-vs-min3 discriminator.
   - `.git/hooks/commit-msg`, `.gitignore`, `requirements*.txt`, `.env.example`, `pyproject.toml`
   - AI4Mars dataset already downloaded and extracted locally (see §4).
 - **REMAINING in MS2:** `src/marsseg/models/foundation.py` (DINOv3-SAT frozen backbone + head; SAM
@@ -232,10 +235,11 @@ in §5.6 and are the single source of truth for every hypothesis below.
    `foundation.py` must FIRST check `os.environ.get("HF_TOKEN")` and, if absent (or cuda absent, or
    SAM checkpoint absent), **skip-and-log** (append a `status="skipped"` results row, record in
    `manifest.gpu_stages_skipped`, return) rather than raise. Never hard-crash the pipeline on CPU.
-5. **MS0 fix task (remaining):** rewrite `.env.example` to (a) drop the false "NO credentials required"
-   framing for H5 and (b) mark `HF_TOKEN` **required-for-H5**; and purge the stale
-   `EARTHDATA_TOKEN`/`FRED_API_KEY` from the live `.env`. (The stale **DINOv2→DINOv3** naming in
-   `.env.example`, `README.md`, `requirements.txt`, and `capabilities.py` has already been corrected.)
+5. **MS0 fix task — DONE 2026-07-01:** `.env.example` rewritten (no false "NO credentials required"
+   framing; `HF_TOKEN` marked **required-for-H5** with the license-acceptance URL); stale
+   `EARTHDATA_TOKEN`/`FRED_API_KEY` purged from the live `.env` (now holds an empty `HF_TOKEN`
+   placeholder). The stale **DINOv2→DINOv3** naming in `.env.example`, `README.md`,
+   `requirements.txt`, `capabilities.py`, and the proposal was also corrected.
 
 ---
 
@@ -292,11 +296,11 @@ data/raw/ai4mars/ai4mars-dataset-merged-0.6/
 - **MER = cross-rover test only** (H4): 204 gold-test images; MER has **no train labels** in this
   release, so it is never trained on — only evaluated with an MSL-trained checkpoint.
 
-### 4.1 build_index is BROKEN against this layout — REQUIRED MS1 fix (blocker)
+### 4.1 build_index camera/pairing fix — **FIXED 2026-07-01** (spec retained for the record)
 
-**The current `src/marsseg/data/ai4mars.py::build_index` produces an EMPTY MSL training index and an
-EMPTY MER index.** Do NOT declare the data "ready" until this is fixed and re-verified. Two independent
-bugs:
+**The pre-fix `src/marsseg/data/ai4mars.py::build_index` produced an EMPTY MSL training index and an
+EMPTY MER index.** The fix below is applied and re-verified (16064/322/204 asserts green). Two
+independent bugs:
 
 **Bug A — camera crossing (MSL train = 0).** `build_index(root, "msl")` calls `find_dir(rdir,
 "images/edr","images","edr")` and `find_dir(rdir, "labels/train","train")` at the `msl/` level. MSL has
@@ -344,7 +348,7 @@ robust label→image stem normalizer:
 `DATA_ROOT = data/raw/ai4mars/ai4mars-dataset-merged-0.6` (the nested extracted dir). `configs/data.yaml`
 sets `data.root` to this path (§5.5). `data/` is gitignored (skeleton via `.gitkeep`).
 
-### 4.3 Canonical image `name` (join key) — REQUIRED MS1/MS2 fix (blocker for eval)
+### 4.3 Canonical image `name` (join key) — **FIXED 2026-07-01** (spec retained for the record)
 
 The paired bootstrap and per-image tables join rows **across models** on `name`, so `name` must be
 **stable, unique within a split, and identical across models**. **Today `build_index` records carry no
@@ -760,10 +764,10 @@ the two runs' `preds/` dirs when both are present.
 
 ```
 src/marsseg/
-  data/    ai4mars.py  (CLASSES/NUM_CLASSES=4/IGNORE_INDEX=255/CLASS_COLORS + build_index(root, rover, camera);
-                        REQUIRES §4.1 camera/pairing fix + §4.3 name key before it indexes real data)   [BUILT MS1 — FIX REQUIRED]
+  data/    ai4mars.py  (CLASSES/NUM_CLASSES=4/IGNORE_INDEX=255/CLASS_COLORS + label_key +
+                        build_index(root, rover, camera, test_gold_dir) — camera-aware, min3-pinned)     [BUILT MS1 — §4.1/§4.3 FIXED]
            dataset.py  (SegDataset item {image (3,H,W) f32, mask (H,W) i64 255=ignore, name, rover};
-                        make_splits by-image; class_pixel_counts; REQUIRES §4.3 name fix)                [BUILT MS1 — FIX REQUIRED]
+                        make_splits by-image; class_pixel_counts; name is a hard key)                    [BUILT MS1 — §4.3 FIXED]
            transforms.py (albumentations; hflip + photometric only, NO vflip/scale/crop; ImageNet norm) [BUILT MS1]
   models/  zoo.py       (build_model registry: baseline/unet/deeplabv3plus/segformer — SINGLE entry point) [BUILT MS2]
            foundation.py (DINOv3 ViT-L/16 SAT frozen backbone + head; SAM ViT-B zero-shot; skip-and-log) [TO BUILD MS2]
@@ -823,14 +827,14 @@ Interpreter is `.venv/Scripts/python.exe` (Windows) or `.venv/bin/python` (V100)
 
 > **Executability note (read before MS4).** `scripts/run_experiment.py`, `configs/*`, and `eval/*` **do
 > not exist yet** (`scripts/` holds only `check_env.py` + `download_data.py`; `configs/` is empty;
-> `src/marsseg/eval/` is `__init__.py` only). **No model can be trained end-to-end until ALL of MS3 is
-> built AND the §4.1/§4.3 code fixes land.** "Train one U-Net" is a build task, not a runnable command,
+> `src/marsseg/eval/` is `__init__.py` only). The §4.1/§4.3 code fixes LANDED 2026-07-01, so training
+> is now gated **only on MS3 being built**. "Train one U-Net" is a build task, not a runnable command,
 > until then. The MS4 command below is written for after MS3 completes — it is not runnable today.
 
 | Phase | Status | Tasks | Gate command → pass signal |
 |---|---|---|---|
-| **MS0 — setup** | **DONE** (pending `.env.example` DINOv3 fix, §3) | scaffold, utils, CI, `check_env`, commit-msg hook, gitignore, `.env.example` | `.venv/Scripts/python.exe scripts/check_env.py` → last line `core OK`, prints `profile=windows_cpu`, exit 0; `.venv/Scripts/python.exe -m pytest tests/test_smoke.py -q` → all pass; `.venv/Scripts/python.exe -m ruff check .` → `All checks passed!`; `.venv/Scripts/python.exe -m black --check .` → clean. |
-| **MS1 — data** | **REOPENED** (was "DONE" but `build_index` is empty against the real layout — §4.1) | apply §4.1 camera/pairing fix + §4.3 `name` fix; add real-layout count asserts | `.venv/Scripts/python.exe -m pytest tests/test_data.py -q` → all pass, **including** new asserts: `build_index(DATA_ROOT,"msl")` → `len(train)==16064` and `len(test)==322` (against **min3**); `build_index(DATA_ROOT,"mer")` → `len(test)==204`, `train==[]`; every record has a non-empty unique camera-qualified `name`; `make_splits(val_frac=0.2, seed=1414)` → `set(train_names) & set(val_names) == set()`. Item contract = `{image FloatTensor (3,H,W), mask LongTensor (H,W) in {0,1,2,3,255}, name, rover}`. |
+| **MS0 — setup** | **DONE** (incl. the §3 `.env.example`/DINOv3 fix, 2026-07-01) | scaffold, utils, CI, `check_env`, commit-msg hook, gitignore, `.env.example` | `.venv/Scripts/python.exe scripts/check_env.py` → last line `core OK`, prints `profile=windows_cpu`, exit 0; `.venv/Scripts/python.exe -m pytest tests/test_smoke.py -q` → all pass; `.venv/Scripts/python.exe -m ruff check .` → `All checks passed!`; `.venv/Scripts/python.exe -m black --check .` → clean. |
+| **MS1 — data** | **DONE (fixed + re-verified 2026-07-01)** — §4.1 camera/pairing + §4.3 `name` fixes applied; real-layout count asserts green on this box | apply §4.1 camera/pairing fix + §4.3 `name` fix; add real-layout count asserts | `.venv/Scripts/python.exe -m pytest tests/test_data.py -q` → all pass, **including** new asserts: `build_index(DATA_ROOT,"msl")` → `len(train)==16064` and `len(test)==322` (against **min3**); `build_index(DATA_ROOT,"mer")` → `len(test)==204`, `train==[]`; every record has a non-empty unique camera-qualified `name`; `make_splits(val_frac=0.2, seed=1414)` → `set(train_names) & set(val_names) == set()`. Item contract = `{image FloatTensor (3,H,W), mask LongTensor (H,W) in {0,1,2,3,255}, name, rover}`. |
 | **MS2 — models** | **PARTIAL** (zoo/loss/lit + 15 tests DONE; `foundation.py` remains; `run_experiment.py` smoke is MS3-gated) | build `models/foundation.py`; add contract test | (A) `.venv/Scripts/python.exe -m pytest tests/test_models.py -q` → pass (forward shapes `(B,4,H,W)`; unknown-model `ValueError`; combined-loss-ignore backward finite; Lightning `fast_dev_run`). (B) `build_model("dinov3_sat"|"sam", …)` returns a module OR skip-and-logs (`status="skipped"`, no crash) when weights/GPU absent. (C) **BLOCKED until MS3** authors `configs/models/baseline.yaml` + `scripts/run_experiment.py`: then `run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` writes a **contract-valid** run (§7.4) + ≥1 results row with `status ∈ {ok,skipped}`. |
 | **MS3 — eval** | **NOT STARTED** | `eval/{metrics,stats,prereg,aggregate,verdict,plots}.py` + `configs/*` + `scripts/{run_experiment,analyze_results}.py` + `PREREG.md` | `.venv/Scripts/python.exe -m pytest tests/test_eval.py -q` → pass, including: metrics + paired-bootstrap (§5.6) + verdict units; **`test_eval.py` loads `configs/hypotheses.yaml` and asserts every family/member/threshold/path is CONCRETE — no placeholder strings (`<pin…>`), `drop_threshold==0.15`, `mer.expected_test_n==204`, `data.expected_test_n==322`).** Then `.venv/Scripts/python.exe scripts/analyze_results.py --store experiments/results_store.parquet --hypotheses configs/hypotheses.yaml --out experiments/analysis/` writes `experiments/manifests/verdicts.json` with a decision in `{support, reject, deferred}` for **every** H0..H5, `ci_low ≤ value ≤ ci_high` where CIs exist, and **H5 = deferred on windows_cpu** (does NOT block H1–H4). |
 | **MS4 — runs** | **NOT STARTED** | CPU smoke; V100 full training + cross-rover (H4) + foundation (H5); merge-back | CPU smoke: `.venv/Scripts/python.exe scripts/run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` exits 0, writes contract-valid run (the override MUST actually subset to 64 train images — §5.4/§8). V100: `bash scripts/run_gpu.sh` exits 0. Merge: `.venv/bin/python scripts/merge_results.py --incoming <gpu_store.parquet> --into experiments/results_store.parquet` → store has a `miou`/`stratum=all`/`status=ok` row for each of {baseline,unet,deeplabv3plus,segformer} + a `cross_rover` row (H4), and `df.duplicated(subset=DEDUP_KEYS).sum()==0`. |

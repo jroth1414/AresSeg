@@ -74,3 +74,48 @@ fixes are specified in DEVPLAN §4.1/§4.3/§5.4 as hard prerequisites of the fi
 **Next:** MS2 — build `models/foundation.py`, then MS3 (`configs/*`, `eval/*`, `run_experiment.py`,
 `analyze_results.py`, `hypotheses.yaml`, `PREREG.md`) — but first apply the §4.1/§4.3 `build_index`
 fixes and re-verify the count assertions (16064 / 322 / 204, MER train empty).
+
+## MS1 (reopened) — build_index fixed against the real layout · branch `phase-ms1-fix`
+
+Applied the two blocking DEVPLAN fixes and re-closed MS1. `build_index` is now **camera-aware and
+ncam-scoped**: MSL pairs images/labels strictly inside one `msl/<camera>/` subtree (default `ncam`,
+the protocol camera; the old `find_dir` rglob had bound ncam images to mcam labels → 0 train pairs);
+MER indexes images from the union of `mer/images/{eff,test}` with the gold `test` pool winning stem
+collisions, and a new `label_key()` normalizer strips `_merged`/`_label` then trailing
+`_<digits>`/`_T<digits>` tokens so MER's `<stem>_16165_T0_merged.png` labels pair. The gold test dir
+is now **pinned explicitly** (default `masked-gold-min3-100agree`; explicit `test_gold_dir` accepts a
+base-relative path or bare name, must resolve inside the current rover/camera's `labels/test`, and
+raises if absent) — never `sorted()[0]`, which had silently picked min1. Every record carries the
+canonical camera-qualified join key `name = {rover}_{camera|pool}_{label_key(image_stem).lower()}`
+(`msl_ncam_…`, `mer_test_…`), records are sorted by `name` (index order no longer depends on
+filesystem enumeration → identical splits on Windows and the V100), `build_index` hard-fails on
+duplicate names, and `SegDataset` returns `rec["name"]` (missing name = `KeyError`, the old `str(i)`
+fallback that could silently misalign cross-model joins is gone).
+
+**Verification (this box, real data):** `msl ncam train=16064, test=322` with every test label under
+`masked-gold-min3-100agree` by path; `mer train=[], test=204` (min3 by path); names unique/non-empty;
+`make_splits(0.2, 1414)` disjoint with `val=3213`. Real-layout asserts live in `tests/test_data.py`
+and **skip when the dataset is absent** so CI stays offline-green. Synthetic fixtures now mirror the
+real nested layout and include an **mcam decoy** (regression for the camera-crossing bug), **min1
+decoys with counts different from min3** on both rovers (a green count proves min3 selection — the
+real 322/204 counts coincide across min1/2/3), MER pool/suffix fixtures, literal name pins
+(`msl_ncam_ntrain0`, `mer_test_1n0eff0338p1931l0m1`), a non-trivial 32→16 mask resize in the item
+test, and a split-determinism assert.
+
+**Adversarial review pass (multi-agent).** A 4-lens review (spec compliance / correctness /
+cross-platform determinism / test adequacy) with independent refuter votes per finding confirmed 3
+gaps — MER gold-dir pinning untested (the one *major*: a `sorted()[0]` regression in the MER branch
+would have passed the entire suite), no literal name pins, no-op resize in the offline item test —
+plus three cheap correctness hardenings (gold-dir containment, raise on pinned-but-missing test
+root, in-index name-uniqueness guard). All folded in; refuted findings (e.g. Windows/Linux glob-case
+concerns — covered by the sort + both-case extensions) were dropped.
+
+**Also closed:** the pending MS0 `.env.example` fix (HF_TOKEN = required-for-H5 with the DINOv3
+license URL; stale NTL tokens purged from the live `.env`) and the DINOv2→DINOv3 naming sweep
+(README, requirements, capabilities, proposal tex+pdf).
+
+**Gate (MS1, green):** 27 pytest tests pass (16 in `test_data.py`, incl. 5 real-layout asserts on
+this box), `ruff` clean, `black` clean, `check_env.py` → `core OK`.
+
+**Next:** MS2 tail — `models/foundation.py` (DINOv3-SAT frozen backbone + head; SAM zero-shot;
+skip-and-log gating), then MS3.
