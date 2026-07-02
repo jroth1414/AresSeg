@@ -42,7 +42,7 @@ def _write_mask(path: Path, rng, size=32, ignore_px=True):
     path.parent.mkdir(parents=True, exist_ok=True)
     m = rng.integers(0, 4, (size, size), dtype="uint8")
     if ignore_px:
-        m[0, 0] = 255
+        m[0:2, 0:2] = 255  # a 2x2 ignore block survives nearest-neighbor downsampling
     cv2.imwrite(str(path), m)
 
 
@@ -89,6 +89,16 @@ def _make_tree(root: Path, n_train=6, n_test=2, size=32) -> Path:
             rng,
             size,
         )
+    # min1 DECOY on the MER side too (different count), so a green MER count proves min3
+    _write_mask(
+        mer
+        / "labels"
+        / "test"
+        / "masked-gold-min1-100agree"
+        / "1n0eff0338p1931l0m1_16165_T0_merged.png",
+        rng,
+        size,
+    )
     (mer / "labels" / "train").mkdir(parents=True, exist_ok=True)
     return root
 
@@ -124,6 +134,9 @@ def test_build_index_msl_camera_scoped(tmp_path):
         assert "ncam" in Path(rec["image"]).parts and "ncam" in Path(rec["label"]).parts
         assert rec["name"].startswith("msl_ncam_")
     assert all("masked-gold-min3-100agree" in r["label"] for r in idx["test"])
+    # pin the EXACT 4.3 name recipe (rover_camera_label_key(image_stem).lower()) to literals
+    assert idx["train"][0]["name"] == "msl_ncam_ntrain0"
+    assert idx["test"][0]["name"] == "msl_ncam_ntest0"
 
 
 def test_build_index_never_crosses_cameras(tmp_path):
@@ -142,11 +155,14 @@ def test_build_index_mer(tmp_path):
     root = _make_tree(tmp_path)
     idx = build_index(root, "mer")
     assert idx["train"] == []
-    assert len(idx["test"]) == 2
+    assert len(idx["test"]) == 2  # min3 count, not the min1 decoy's 1
     for rec in idx["test"]:
         assert rec["name"].startswith("mer_test_")
         assert Path(rec["image"]).parent.name == "test"  # gold pool wins the eff/test union
         assert Path(rec["label"]).name.endswith("_T0_merged.png")
+        assert "masked-gold-min3-100agree" in rec["label"]
+    # literal name pins: label suffix tokens must be stripped, image stem lowercased
+    assert idx["test"][0]["name"] == "mer_test_1n0eff0338p1931l0m1"
 
 
 def test_build_index_gold_dir_pinning(tmp_path):
@@ -156,9 +172,18 @@ def test_build_index_gold_dir_pinning(tmp_path):
     assert len(min1["test"]) == 1
     rel = build_index(root, "msl", test_gold_dir="msl/ncam/labels/test/masked-gold-min3-100agree")
     assert len(rel["test"]) == 2
+    assert len(build_index(root, "mer", test_gold_dir="masked-gold-min1-100agree")["test"]) == 1
     # a pinned-but-absent gold dir is a hard error, never a silent fallback
     with pytest.raises(FileNotFoundError):
         build_index(root, "msl", test_gold_dir="masked-gold-min9-100agree")
+    # a pin whose PATH points outside this rover/camera scope resolves by basename WITHIN the
+    # scope (the agreement level is what the pin guarantees), never to the foreign tree
+    cross = build_index(root, "mer", test_gold_dir="msl/ncam/labels/test/masked-gold-min3-100agree")
+    assert len(cross["test"]) == 2
+    assert all(Path(r["label"]).parts.count("mer") == 1 for r in cross["test"])
+    # an explicit pin with no labels/test root at all must raise, not return an empty test set
+    with pytest.raises(FileNotFoundError):
+        build_index(root, "msl", camera="mcam", test_gold_dir="masked-gold-min3-100agree")
 
 
 def test_build_index_accepts_both_roots_and_is_deterministic(tmp_path):
@@ -182,14 +207,15 @@ def test_build_index_unknown_rover(tmp_path):
 def test_dataset_item_and_ignore(tmp_path):
     root = _make_tree(tmp_path)
     idx = build_index(root, "msl")
-    ds = SegDataset(idx["train"], eval_transform(size=32))
+    # size != fixture size, so the mask resize path (nearest, no value blending) is exercised
+    ds = SegDataset(idx["train"], eval_transform(size=16))
     item = ds[0]
-    assert tuple(item["image"].shape) == (3, 32, 32)
-    assert tuple(item["mask"].shape) == (32, 32)
+    assert tuple(item["image"].shape) == (3, 16, 16)
+    assert tuple(item["mask"].shape) == (16, 16)
     assert str(item["mask"].dtype) == "torch.int64"
     vals = set(item["mask"].unique().tolist())
     assert vals <= {0, 1, 2, 3, ai4mars.IGNORE_INDEX}
-    assert ai4mars.IGNORE_INDEX in vals  # the ignore pixel survived the transform
+    assert ai4mars.IGNORE_INDEX in vals  # the ignore block survived the resize
     assert item["name"] == idx["train"][0]["name"] and item["rover"] == "msl"
 
 
@@ -209,6 +235,8 @@ def test_splits_disjoint_by_image(tmp_path):
     val_names = {r["name"] for r in sp["val"]}
     assert train_names.isdisjoint(val_names)
     assert len(sp["train"]) + len(sp["val"]) == len(idx["train"])
+    # same seed + same input order => byte-identical split membership (V100 reproducibility)
+    assert make_splits(idx["train"], val_frac=0.3, seed=1414) == sp
 
 
 def test_class_pixel_counts(tmp_path):
@@ -246,6 +274,8 @@ def test_real_msl_counts(msl_index):
 def test_real_mer_counts(mer_index):
     assert mer_index["train"] == []
     assert len(mer_index["test"]) == 204
+    # min1/min2/min3 all hold 204 files, so pin the dir by PATH, exactly as on the MSL side
+    assert all("masked-gold-min3-100agree" in r["label"] for r in mer_index["test"])
 
 
 @requires_data

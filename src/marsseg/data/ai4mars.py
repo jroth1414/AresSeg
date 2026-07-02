@@ -112,14 +112,19 @@ def _resolve_base(root: Path) -> Path:
 
 
 def _resolve_gold_dir(base: Path, test_root: Path, test_gold_dir: str | None) -> Path:
-    """Resolve the pinned gold test dir; explicit selection, never sort order."""
+    """Resolve the pinned gold test dir; explicit selection, never sort order.
+
+    The resolved dir must live under THIS camera's labels/test root, so a pin that points at
+    another rover/camera can never silently redirect the test set (the basename — the agreement
+    level — is what the pin guarantees).
+    """
     if test_gold_dir:
         cand = Path(test_gold_dir)
         for c in (base / cand, test_root / cand.name):
-            if c.is_dir():
+            if c.is_dir() and c.resolve().is_relative_to(test_root.resolve()):
                 return c
         raise FileNotFoundError(
-            f"pinned test_gold_dir {test_gold_dir!r} not found under {base} or {test_root}"
+            f"pinned test_gold_dir {test_gold_dir!r} not found under {test_root}"
         )
     chosen = test_root / DEFAULT_TEST_GOLD_DIR
     if not chosen.is_dir():
@@ -158,6 +163,8 @@ def build_index(
         if test_root.is_dir():
             gold = _resolve_gold_dir(base, test_root, test_gold_dir)
             out["test"] = _match_labels(images, gold, prefix)
+        elif test_gold_dir:
+            raise FileNotFoundError(f"test_gold_dir pinned but {test_root} does not exist")
     elif rover == "mer":
         rdir = base / "mer"
         # union of the two pools; 'test' (the gold subset) wins stem collisions
@@ -169,6 +176,12 @@ def build_index(
         if test_root.is_dir():
             gold = _resolve_gold_dir(base, test_root, test_gold_dir)
             out["test"] = _match_labels(images, gold, "mer_test")
+        elif test_gold_dir:
+            raise FileNotFoundError(f"test_gold_dir pinned but {test_root} does not exist")
     else:
         raise ValueError(f"unknown rover {rover!r}; expected 'msl' or 'mer'")
+    for split, recs in out.items():
+        names = [r["name"] for r in recs]
+        if len(set(names)) != len(names):  # two labels resolved to one image, or a stem collision
+            raise ValueError(f"duplicate canonical names in {rover}/{split} index")
     return out
