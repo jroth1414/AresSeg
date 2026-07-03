@@ -97,8 +97,9 @@ bottom). Update §0 here and README §Status at the end of each phase.
    OPTIONAL multi-seed robustness appendix, not the reported number.
 6. **Work task-by-task.** One local commit per task; the message is **prefixed with the phase/task ID**
    (e.g. `MS3: add eval/metrics.py`). One **branch per phase**, branched off `main`
-   (e.g. `phase-ms3-eval`). **Commit LOCALLY only — DO NOT push unless the user explicitly asks.**
-   **PAUSE at every phase gate for user review** before starting the next phase.
+   (e.g. `phase-ms3-eval`). **Push to origin regularly — after every task-commit or so** (user
+   directive 2026-07-02, superseding the earlier local-only rule). **PAUSE at every phase gate for
+   user review** before starting the next phase.
 7. **The local RTX 5070 Ti (Blackwell) is intentionally UNUSED for training.** Do not target it. CPU
    is for the full pipeline + smoke; full training runs on the incoming **V100 (16 GB, Ubuntu)**.
 
