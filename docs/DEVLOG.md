@@ -161,3 +161,46 @@ correctness lens.
 **Next:** MS3 — `configs/{data,models/*,hypotheses}.yaml`, `eval/{metrics,stats,prereg,aggregate,
 verdict,plots}.py`, `scripts/{run_experiment,analyze_results}.py`, `experiments/PREREG.md` (freeze
 the SAM region-oracle decision there), then the MS2-C/MS4 CPU smoke.
+
+## MS3 — evaluation stack, configs, pre-registration · branch `phase-ms3-eval`
+
+Built the entire hypothesis-testing machinery, closing MS3 (and MS2's gate C). **Configs:**
+`data.yaml` (min3 gold pins, 322/204 expected counts, the CPU-smoke `max_train_images` cap),
+`hypotheses.yaml` (families A–E, the frozen §5.6 stats block, H4 `drop_threshold: 0.15`, §5.9
+canonical-run selection), and 11 model configs including the gated H5 arms. **Eval:** `metrics.py`
+(per-image integer count tables; split-level IoU from summed counts; fixed class set S; boundary-F1
+descriptive-only), `stats.py` (the §5.6 paired image-bootstrap — `default_rng(0)` reset per
+comparison, ONE index draw per replicate shared across both models and all per-class strata,
+iou_zero rule with |S| denominator, plus-one p, percentile CI; the deterministic §5.7 H4 rule; Holm;
+descriptive McNemar), `aggregate.py` (§7.4 per-image schema + store rows), `verdict.py` (§5.9
+resolution → family comparisons → Holm → H0–H5 decisions; §5.8 H5 partial rule; honest H0),
+`prereg.py` (PREREG seal: write-once + SHA-256 verify, enforced by `analyze_results.py`), and
+numpy/cv2 overlay `plots.py`. **Scripts:** `run_experiment.py` (train or `--eval-only --h4`; §7.4
+predictions contract; manifest extras incl. `resolved_test_gold_dir`, `class_weights`,
+`weights_source`, `best_val_miou`; committed mirror under `experiments/manifests/`),
+`analyze_results.py`, `merge_results.py`. **PREREG.md is sealed**, freezing α=0.10/Holm, seeds
+(1414 / bootstrap 0), the pinned min3 test sets, and the **SAM region-oracle scoring rule** (each
+SAM proposal takes its majority valid-GT class; uncovered pixels → soil; an explicit upper bound).
+
+**Gate (MS3 + MS2-C, green):** 53 pytest tests pass (20 in `test_eval.py`), ruff + black clean;
+`analyze_results.py` exits 0 and writes `verdicts.json` deciding **every** H0–H5 (all `deferred`
+pending GPU runs — H5 deferral never blocks H1–H4) + `leaderboard.csv`; the CPU smoke
+(`run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64
+train.max_epochs=1`) exits 0 and is contract-valid: 322 pred PNGs, 1,932 per-image rows, 8 store
+rows, manifest + mirror committed. Smoke sanity: 1-epoch scratch TinyUNet on 64 images → test mIoU
+0.056 (garbage, as expected — the pipeline, not the model, was under test).
+
+**Adversarial review (capped at 10 agents per user directive: 3 lenses + 7 refuters).** Confirmed
+and fixed 4 majors: (1) H4 runs' per-class store rows collided on DEDUP_KEYS across the MSL/MER
+splits — merge would have silently deleted in-rover per-class values and mislabeled MER numbers
+(per-class rows now inherit `in_rover`/`cross_rover`); (2) `--eval-only` manifests recorded
+`best_val_miou: null`, crashing H4 subject selection with >1 candidate (val score now recovered
+from the checkpoint's ModelCheckpoint state; verdict side is None-safe with timestamp fallback);
+(3) H4's baseline-on-MER was picked by store row order, not canonical resolution (now
+newest-by-manifest); (4) the `COMPARISONS` table was completely unpinned by tests (now pinned
+field-by-field to §10). Also triaged the unverified overflow: H5 launch configs added,
+`leaderboard()` now seed-filtered and gpu-preferring, multi-backbone scoring reads the newest run,
+iou_zero/Holm-order test gaps closed, and the smoke val-cap deviation documented in §5.4.
+
+**Next:** MS4 — `scripts/run_gpu.sh`, the V100 sweep (7 training arms + H4 evals + H5), merge-back,
+`analyze_results.py` for real verdicts; then MS5 (paper).

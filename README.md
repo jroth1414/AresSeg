@@ -37,11 +37,14 @@ The full pipeline + smoke tests run CPU-only. Full model training runs on a CUDA
 
 ## Status
 
-MS0 (scaffold), MS1 (AI4Mars data pipeline), and MS2 (models) are **done**. MS1 is verified against
-the on-disk merged-0.6 layout: camera-aware `build_index` (MSL ncam-scoped; MER images from
-`images/{eff,test}`), pinned `masked-gold-min3-100agree` test sets (16,064 train / 322 MSL test /
-204 MER test), canonical camera-qualified `name` join keys, by-image splits. MS2 covers the model
-zoo (baseline/U-Net/DeepLabV3+/SegFormer), CE+Dice loss, Lightning training module, and the gated
-H5 foundation arms (`foundation.py`: DINOv3-SAT frozen backbone + head, SAM zero-shot,
-skip-and-log on CPU/missing weights). Next: MS3 (configs, eval/stats, `run_experiment.py`,
-pre-registration).
+MS0 (scaffold), MS1 (AI4Mars data pipeline), MS2 (models), and MS3 (configs + evaluation stack)
+are **done**. The data layer is verified against the on-disk merged-0.6 layout (camera-aware
+`build_index`, pinned min3 gold test sets: 16,064 train / 322 MSL test / 204 MER test,
+camera-qualified `name` join keys, by-image splits). The model zoo covers
+baseline/U-Net/DeepLabV3+/SegFormer plus the gated H5 foundation arms (DINOv3-SAT frozen backbone
++ head, SAM zero-shot; skip-and-log on CPU/missing weights). The evaluation stack implements the
+pre-registered protocol end-to-end: per-image count tables, the paired image-bootstrap
+(n=10,000, seed 0) with Holm correction, the deterministic H4 cross-rover rule, canonical-run
+selection, and `analyze_results.py` → `verdicts.json` (H0–H5, currently all *deferred* pending
+GPU runs). `experiments/PREREG.md` is sealed (SHA-256 recorded) and the CPU smoke run is
+committed. Next: MS4 — `run_gpu.sh` + the V100 training sweep, then merge-back and verdicts.
