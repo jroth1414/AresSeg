@@ -73,3 +73,70 @@ def test_lightning_fast_dev_run(tmp_path):
         enable_progress_bar=False,
     )
     trainer.fit(model, dm)  # 1 train + 1 val batch; must complete without error
+
+
+# --------------------------------------------------------------------------------------
+# foundation (H5, gated) — MS2 gate B: build a module OR skip-and-log, never crash
+# --------------------------------------------------------------------------------------
+
+
+def test_foundation_skips_and_logs_on_this_box():
+    """windows_cpu + empty HF_TOKEN + no SAM extras/ckpt => both arms return None, no raise."""
+    assert build_model("dinov3_sat") is None
+    assert build_model("sam") is None
+
+
+def test_foundation_gating_reasons(monkeypatch, tmp_path):
+    from marsseg.models import foundation
+
+    # all dinov3 gates pass when cuda + token are present
+    monkeypatch.setattr(foundation, "has_cuda", lambda: True)
+    monkeypatch.setenv("HF_TOKEN", "hf_dummy")
+    assert foundation.gating_reasons("dinov3_sat") == []
+    # each gate trips independently and is named in the reason
+    monkeypatch.setenv("HF_TOKEN", "")
+    assert any("HF_TOKEN" in r for r in foundation.gating_reasons("dinov3_sat"))
+    monkeypatch.setattr(foundation, "has_cuda", lambda: False)
+    assert any("cuda" in r for r in foundation.gating_reasons("dinov3_sat"))
+    # sam: import + checkpoint gates (segment-anything is not installed on this box)
+    reasons = foundation.gating_reasons("sam", sam_checkpoint=tmp_path / "missing.pth")
+    assert any("segment-anything" in r for r in reasons)
+    assert any("checkpoint absent" in r for r in reasons)
+    with pytest.raises(ValueError):
+        foundation.gating_reasons("clip")
+
+
+def test_dinov3_head_forward_contract():
+    """Head/reshape/upsample logic offline via a stub backbone: (B,3,H,W) -> (B,4,H,W)."""
+    from types import SimpleNamespace
+
+    from marsseg.models.foundation import DinoV3SatSegmenter
+
+    class _StubViT(torch.nn.Module):
+        def __init__(self, hidden=64, patch=16, prefix=5):
+            super().__init__()
+            self.proj = torch.nn.Linear(hidden, hidden)  # a real param, to assert freezing
+            self.hidden, self.patch, self.prefix = hidden, patch, prefix
+
+        def forward(self, pixel_values):
+            b, _, h, w = pixel_values.shape
+            n = (h // self.patch) * (w // self.patch)
+            t = torch.randn(b, self.prefix + n, self.hidden)
+            return SimpleNamespace(last_hidden_state=self.proj(t))
+
+    m = DinoV3SatSegmenter(
+        _StubViT(), hidden_size=64, patch_size=16, num_prefix_tokens=5, num_classes=4
+    )
+    out = m(torch.randn(2, 3, 64, 64))
+    assert tuple(out.shape) == (2, 4, 64, 64)
+    # backbone frozen + pinned to eval; head trainable
+    assert all(not p.requires_grad for p in m.backbone.parameters())
+    assert all(p.requires_grad for p in m.head.parameters())
+    m.train()
+    assert m.training and not m.backbone.training
+    # a wrong prefix-token count must fail loudly at first forward, not silently mis-grid
+    bad = DinoV3SatSegmenter(
+        _StubViT(), hidden_size=64, patch_size=16, num_prefix_tokens=3, num_classes=4
+    )
+    with pytest.raises(RuntimeError, match="token grid mismatch"):
+        bad(torch.randn(1, 3, 64, 64))
