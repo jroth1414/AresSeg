@@ -115,5 +115,7 @@ def boundary_f1(
         dist_to_pred = distance_transform_edt(~pb)
         precision = float(np.mean(dist_to_gt[pb] <= tol_px))
         recall = float(np.mean(dist_to_pred[gb] <= tol_px))
-        f1s.append(0.0 if precision + recall == 0 else 2 * precision * recall / (precision + recall))
+        f1s.append(
+            0.0 if precision + recall == 0 else 2 * precision * recall / (precision + recall)
+        )
     return float(np.mean(f1s)) if f1s else float("nan")

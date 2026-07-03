@@ -106,35 +106,51 @@ def store_rows(
     }
     sub = per_image[per_image["split"] == split]
     iou = sub[(sub["metric"] == "iou") & (sub["scope"].isin(classes))]
-    inter_sums = np.array(
-        [iou[iou["scope"] == c]["inter"].sum() for c in classes], dtype=np.int64
-    )
-    union_sums = np.array(
-        [iou[iou["scope"] == c]["union"].sum() for c in classes], dtype=np.int64
-    )
+    inter_sums = np.array([iou[iou["scope"] == c]["inter"].sum() for c in classes], dtype=np.int64)
+    union_sums = np.array([iou[iou["scope"] == c]["union"].sum() for c in classes], dtype=np.int64)
     class_set = fixed_class_set(union_sums)
     n_images = sub["name"].nunique()
     rows = [
-        {**base, "scope": "ALL", "stratum": stratum, "metric": "miou",
-         "value": macro_miou_from_counts(inter_sums, union_sums, class_set)},
+        {
+            **base,
+            "scope": "ALL",
+            "stratum": stratum,
+            "metric": "miou",
+            "value": macro_miou_from_counts(inter_sums, union_sums, class_set),
+        },
         {**base, "scope": "ALL", "stratum": stratum, "metric": "n", "value": float(n_images)},
     ]
     for c, cls in enumerate(classes):
         rows.append(
-            {**base, "scope": cls, "stratum": "per_class", "metric": "iou",
-             "value": iou_from_counts(inter_sums[c], union_sums[c])}
+            {
+                **base,
+                "scope": cls,
+                "stratum": "per_class",
+                "metric": "iou",
+                "value": iou_from_counts(inter_sums[c], union_sums[c]),
+            }
         )
     pa = sub[sub["metric"] == "pixel_acc"]
     if len(pa):  # split-level pixel_acc = sum(correct)/sum(valid); correct_i = value_i * n_valid_i
         correct = float((pa["value"] * pa["n_valid"]).sum())
         rows.append(
-            {**base, "scope": "ALL", "stratum": stratum, "metric": "pixel_acc",
-             "value": correct / float(pa["n_valid"].sum())}
+            {
+                **base,
+                "scope": "ALL",
+                "stratum": stratum,
+                "metric": "pixel_acc",
+                "value": correct / float(pa["n_valid"].sum()),
+            }
         )
     bf = sub[sub["metric"] == "boundary_f1"]["value"].dropna()
     if len(bf):  # descriptive-only: reported as the mean of per-image values
         rows.append(
-            {**base, "scope": "ALL", "stratum": stratum, "metric": "boundary_f1",
-             "value": float(bf.mean())}
+            {
+                **base,
+                "scope": "ALL",
+                "stratum": stratum,
+                "metric": "boundary_f1",
+                "value": float(bf.mean()),
+            }
         )
     return rows

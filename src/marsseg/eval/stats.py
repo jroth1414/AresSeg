@@ -42,9 +42,7 @@ def counts_from_per_image(df, split: str, classes: list[str] = CLASSES):
 
 def _macro(inter_sums: np.ndarray, union_sums: np.ndarray, class_set: list[int]) -> float:
     """Macro mIoU over the FIXED set with the iou_zero rule (denominator stays |S|)."""
-    vals = [
-        (inter_sums[c] / union_sums[c] if union_sums[c] > 0 else 0.0) for c in class_set
-    ]
+    vals = [(inter_sums[c] / union_sums[c] if union_sums[c] > 0 else 0.0) for c in class_set]
     return float(np.mean(vals))
 
 

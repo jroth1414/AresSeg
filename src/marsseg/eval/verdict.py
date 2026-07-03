@@ -23,52 +23,67 @@ MANIFESTS_DIR = Path("experiments/manifests")
 # Family-member comparison table (DEVPLAN section 10). 'a' is the delta's positive side.
 COMPARISONS: dict[str, dict] = {
     "baseline_vs_unet": {
-        "family": "A", "tail": "greater",
+        "family": "A",
+        "tail": "greater",
         "a": {"model": "unet", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "baseline", "stratum": "all"},
     },
     "baseline_vs_deeplabv3plus": {
-        "family": "A", "tail": "greater",
+        "family": "A",
+        "tail": "greater",
         "a": {"model": "deeplabv3plus", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "baseline", "stratum": "all"},
     },
     "baseline_vs_segformer": {
-        "family": "A", "tail": "greater",
+        "family": "A",
+        "tail": "greater",
         "a": {"model": "segformer", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "baseline", "stratum": "all"},
     },
     "unet_pretrained_vs_scratch": {
-        "family": "B", "tail": "greater", "match_backbone": True,
+        "family": "B",
+        "tail": "greater",
+        "match_backbone": True,
         "a": {"model": "unet", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "unet", "variant": "scratch", "stratum": "all"},
     },
     "deeplabv3plus_pretrained_vs_scratch": {
-        "family": "B", "tail": "greater", "match_backbone": True,
+        "family": "B",
+        "tail": "greater",
+        "match_backbone": True,
         "a": {"model": "deeplabv3plus", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "deeplabv3plus", "variant": "scratch", "stratum": "all"},
     },
     "segformer_pretrained_vs_scratch": {
-        "family": "B", "tail": "greater", "match_backbone": True,
+        "family": "B",
+        "tail": "greater",
+        "match_backbone": True,
         "a": {"model": "segformer", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "segformer", "variant": "scratch", "stratum": "all"},
     },
     "segformer_vs_unet": {  # delta orientation: segformer - cnn (two-sided)
-        "family": "C", "tail": "two_sided", "per_class": True,
+        "family": "C",
+        "tail": "two_sided",
+        "per_class": True,
         "a": {"model": "segformer", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "unet", "variant": "pretrained", "stratum": "all"},
     },
     "segformer_vs_deeplabv3plus": {
-        "family": "C", "tail": "two_sided", "per_class": True,
+        "family": "C",
+        "tail": "two_sided",
+        "per_class": True,
         "a": {"model": "segformer", "variant": "pretrained", "stratum": "all"},
         "b": {"model": "deeplabv3plus", "variant": "pretrained", "stratum": "all"},
     },
     "dinov3_sat_vs_baseline": {
-        "family": "E", "tail": "greater",
+        "family": "E",
+        "tail": "greater",
         "a": {"model": "dinov3_sat", "variant": "finetuned", "stratum": "all"},
         "b": {"model": "baseline", "stratum": "all"},
     },
     "sam_zeroshot_vs_baseline": {
-        "family": "E", "tail": "greater",
+        "family": "E",
+        "tail": "greater",
         "a": {"model": "sam", "variant": "zeroshot", "stratum": "all"},
         "b": {"model": "baseline", "stratum": "all"},
     },
@@ -100,9 +115,11 @@ def resolve_run(
     if backbone is not None:
         df = df[df["backbone"] == backbone]
     flt = canon.get("filter", {})
-    df = df[(df["seed"] == flt.get("seed", 1414))
-            & (df["profile"] == flt.get("profile", "gpu_full"))
-            & (df["status"] == flt.get("status", "ok"))]
+    df = df[
+        (df["seed"] == flt.get("seed", 1414))
+        & (df["profile"] == flt.get("profile", "gpu_full"))
+        & (df["status"] == flt.get("status", "ok"))
+    ]
     if df.empty:
         raise Unresolvable(f"no canonical run for {selector} (backbone={backbone})")
     # multiple BACKBONES for one (model, variant, stratum): best manifest best_val_miou wins
@@ -151,7 +168,10 @@ def _compare(
             f"({len(names_a)} vs {len(names_b)} names) — cannot pair"
         )
     res = paired_bootstrap(
-        ia, ua, ib, ub,
+        ia,
+        ua,
+        ib,
+        ub,
         tail=spec["tail"],
         n_resamples=int(stats_cfg.get("n_resamples", 10000)),
         seed=int(stats_cfg.get("bootstrap_seed", 0)),
@@ -175,8 +195,10 @@ def decide(
     members: dict[str, dict] = {}
     for comp_id, spec in COMPARISONS.items():
         try:
-            members[comp_id] = {"status": "ok", "result": _compare(
-                store, spec, canon, manifests_dir, stats_cfg)}
+            members[comp_id] = {
+                "status": "ok",
+                "result": _compare(store, spec, canon, manifests_dir, stats_cfg),
+            }
         except Unresolvable as e:
             members[comp_id] = {"status": "deferred", "reason": str(e)}
 
@@ -194,19 +216,32 @@ def decide(
                 r = members[m]["result"]
                 hp = holm_ps[ok.index(m)]
                 sig = hp < alpha and (r["ALL"]["delta"] > 0 if fam != "C" else True)
-                out.append({
-                    "comparison": m, "runs": [r["run_a"], r["run_b"]],
-                    "delta": r["ALL"]["delta"], "ci_low": r["ALL"]["ci_low"],
-                    "ci_high": r["ALL"]["ci_high"], "raw_p": r["ALL"]["p"], "holm_p": hp,
-                    "decision": ("significant" if sig else "not_significant"),
-                    **({"direction": ("segformer" if r["ALL"]["delta"] > 0 else "cnn")}
-                       if fam == "C" else {}),
-                    **({"per_class": {k: v for k, v in r.items()
-                                      if k in CLASSES}} if fam == "C" else {}),
-                })
+                out.append(
+                    {
+                        "comparison": m,
+                        "runs": [r["run_a"], r["run_b"]],
+                        "delta": r["ALL"]["delta"],
+                        "ci_low": r["ALL"]["ci_low"],
+                        "ci_high": r["ALL"]["ci_high"],
+                        "raw_p": r["ALL"]["p"],
+                        "holm_p": hp,
+                        "decision": ("significant" if sig else "not_significant"),
+                        **(
+                            {"direction": ("segformer" if r["ALL"]["delta"] > 0 else "cnn")}
+                            if fam == "C"
+                            else {}
+                        ),
+                        **(
+                            {"per_class": {k: v for k, v in r.items() if k in CLASSES}}
+                            if fam == "C"
+                            else {}
+                        ),
+                    }
+                )
             else:
-                out.append({"comparison": m, "decision": "deferred",
-                            "reason": members[m]["reason"]})
+                out.append(
+                    {"comparison": m, "decision": "deferred", "reason": members[m]["reason"]}
+                )
         families[fam] = {"members": out}
 
     def fam_decision(fam: str) -> str:
@@ -220,28 +255,41 @@ def decide(
     # ---- H4 (5.7): deterministic rule on the resolved subject + baseline-on-MER ----
     h4: dict = {"decision": "deferred"}
     try:
-        subj_sel = {"stratum": "cross_rover"}
-        cross = store[(store["metric"] == "miou") & (store["scope"] == "ALL")
-                      & (store["stratum"] == "cross_rover") & (store["status"] == "ok")]
+        cross = store[
+            (store["metric"] == "miou")
+            & (store["scope"] == "ALL")
+            & (store["stratum"] == "cross_rover")
+            & (store["status"] == "ok")
+        ]
         flt = canon.get("filter", {})
-        cross = cross[(cross["seed"] == flt.get("seed", 1414))
-                      & (cross["profile"] == flt.get("profile", "gpu_full"))]
+        cross = cross[
+            (cross["seed"] == flt.get("seed", 1414))
+            & (cross["profile"] == flt.get("profile", "gpu_full"))
+        ]
         subjects = cross[cross["model"] != "baseline"]
         base_mer = cross[cross["model"] == "baseline"]
         if subjects.empty or base_mer.empty:
             raise Unresolvable("missing cross_rover rows for subject and/or baseline")
         if subjects["run_id"].nunique() > 1:  # >1 candidate: highest manifest best_val_miou
-            scores = {r: _manifest(manifests_dir, r).get("best_val_miou", float("-inf"))
-                      for r in subjects["run_id"].unique()}
+            scores = {
+                r: _manifest(manifests_dir, r).get("best_val_miou", float("-inf"))
+                for r in subjects["run_id"].unique()
+            }
             subjects = subjects[subjects["run_id"] == max(scores, key=scores.get)]
         subj_run = subjects.iloc[0]["run_id"]
-        in_rover = store[(store["run_id"] == subj_run) & (store["stratum"] == "in_rover")
-                         & (store["metric"] == "miou") & (store["scope"] == "ALL")]
+        in_rover = store[
+            (store["run_id"] == subj_run)
+            & (store["stratum"] == "in_rover")
+            & (store["metric"] == "miou")
+            & (store["scope"] == "ALL")
+        ]
         if in_rover.empty:
             raise Unresolvable(f"subject run {subj_run} lacks an in_rover miou row")
         _, mi, mu = counts_from_per_image(_per_image(manifests_dir, subj_run), "test_mer")
         h4 = h4_rule(
-            float(in_rover.iloc[0]["value"]), mi, mu,
+            float(in_rover.iloc[0]["value"]),
+            mi,
+            mu,
             float(base_mer.iloc[0]["value"]),
             drop_threshold=float(hyp_cfg["hypotheses"]["H4"]["drop_threshold"]),
             n_resamples=int(stats_cfg.get("n_resamples", 10000)),
@@ -269,18 +317,29 @@ def decide(
         "generated_git_sha": git_sha,
         "families": families,
         "hypotheses": {
-            "H0": {"decision": ("reject" if h1 == "support"
-                                else "support" if h1 == "reject" else "deferred"),
-                   "evidence": "H0 holds iff H1 is not rejected (reported honestly)."},
+            "H0": {
+                "decision": (
+                    "reject" if h1 == "support" else "support" if h1 == "reject" else "deferred"
+                ),
+                "evidence": "H0 holds iff H1 is not rejected (reported honestly).",
+            },
             "H1": {"decision": h1, "evidence": "Family A vs baseline, Holm alpha=0.10."},
-            "H2": {"decision": fam_decision("B"),
-                   "evidence": "Family B pretrained vs scratch, Holm alpha=0.10."},
-            "H3": {"decision": fam_decision("C"),
-                   "evidence": "Family C segformer-cnn two-sided + per-class strata."},
-            "H4": {"decision": h4["decision"],
-                   "evidence": {k: v for k, v in h4.items() if k != "decision"}},
-            "H5": {"decision": h5_decision,
-                   "evidence": "Family E on gpu_full; deferred members lack ok runs (5.8)."},
+            "H2": {
+                "decision": fam_decision("B"),
+                "evidence": "Family B pretrained vs scratch, Holm alpha=0.10.",
+            },
+            "H3": {
+                "decision": fam_decision("C"),
+                "evidence": "Family C segformer-cnn two-sided + per-class strata.",
+            },
+            "H4": {
+                "decision": h4["decision"],
+                "evidence": {k: v for k, v in h4.items() if k != "decision"},
+            },
+            "H5": {
+                "decision": h5_decision,
+                "evidence": "Family E on gpu_full; deferred members lack ok runs (5.8).",
+            },
         },
     }
     return verdicts
@@ -288,8 +347,7 @@ def decide(
 
 def leaderboard(store: pd.DataFrame) -> pd.DataFrame:
     """model, backbone, variant, stratum, miou, ci_low, ci_high (status ok, newest kept last)."""
-    df = store[(store["metric"] == "miou") & (store["scope"] == "ALL")
-               & (store["status"] == "ok")]
+    df = store[(store["metric"] == "miou") & (store["scope"] == "ALL") & (store["status"] == "ok")]
     df = df.drop_duplicates(subset=["model", "backbone", "variant", "stratum"], keep="last")
     return df[["model", "backbone", "variant", "stratum", "value", "ci_low", "ci_high"]].rename(
         columns={"value": "miou"}
