@@ -1,0 +1,123 @@
+{
+  "run_id": "baseline__scratch__none__in_rover__seed1414__windows_cpu__eb4c1e5f",
+  "timestamp_utc": "2026-07-03T04:13:10Z",
+  "git_sha": "711628e05d5d64947e98532e45dbab03bf1a0607",
+  "git_dirty": true,
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "seed": 1414,
+  "profile": "windows_cpu",
+  "capabilities": {
+    "cuda": false,
+    "gpu_name": null,
+    "smp": true,
+    "transformers": true,
+    "sam": false,
+    "timm": true,
+    "profile": "windows_cpu"
+  },
+  "packages": {
+    "numpy": "2.0.2",
+    "pandas": "2.2.3",
+    "pyarrow": "17.0.0",
+    "scikit-learn": "1.9.0",
+    "scikit-image": "0.26.0",
+    "scipy": "1.17.1",
+    "torch": "2.4.1",
+    "torchvision": "0.19.1",
+    "segmentation-models-pytorch": "0.5.0",
+    "transformers": "5.12.1",
+    "timm": "1.0.27",
+    "albumentations": "2.0.8",
+    "opencv-python-headless": "4.13.0.92",
+    "pillow": "12.2.0",
+    "segment-anything": null
+  },
+  "config": {
+    "data": {
+      "root": "data/raw/ai4mars/ai4mars-dataset-merged-0.6",
+      "rover": "msl",
+      "camera": "ncam",
+      "val_frac": 0.2,
+      "size": 512,
+      "seed": 1414,
+      "split_by": "image",
+      "split_seed": 1414,
+      "test_gold_dir": "msl/ncam/labels/test/masked-gold-min3-100agree",
+      "expected_test_n": 322,
+      "max_train_images": 64
+    },
+    "mer": {
+      "rover": "mer",
+      "image_dirs": [
+        "mer/images/eff",
+        "mer/images/test"
+      ],
+      "test_gold_dir": "mer/labels/test/masked-gold-min3-100agree",
+      "expected_test_n": 204,
+      "has_train": false
+    },
+    "class_weights": {
+      "method": "inverse_freq_normalized",
+      "formula": "w_c = median(counts)/counts_c",
+      "clip": [
+        0.5,
+        10.0
+      ],
+      "computed_on": "train_split",
+      "max_images": null
+    },
+    "aug": {
+      "hflip_p": 0.5,
+      "brightness_limit": 0.2,
+      "contrast_limit": 0.2,
+      "rbc_p": 0.3,
+      "vflip": false,
+      "scale_crop": false
+    },
+    "model": {
+      "name": "baseline",
+      "backbone": null,
+      "results_backbone": "none",
+      "pretrained": false
+    },
+    "train": {
+      "batch_size": 8,
+      "max_epochs": 1,
+      "lr": "3e-4",
+      "weight_decay": "1e-4",
+      "dice_weight": 1.0,
+      "ignore_index": 255,
+      "early_stop_patience": 10,
+      "grad_clip": 1.0
+    }
+  },
+  "config_hash": "eb4c1e5f7b839f23ff7b6f22ee5e3f429d6e91e9b4fa7c34d22f6e8096c5c965",
+  "model": "baseline",
+  "backbone": "none",
+  "variant": "scratch",
+  "dataset": "ai4mars_msl_ncam",
+  "data_hashes": {
+    "n_train": 64,
+    "n_val": 64,
+    "n_test": 322
+  },
+  "stages_completed": [
+    "index",
+    "splits",
+    "class_weights",
+    "train",
+    "eval_test_msl"
+  ],
+  "gpu_stages_skipped": [],
+  "class_weights": [
+    0.7323016859728599,
+    0.5,
+    1.5761867652962616,
+    10.0
+  ],
+  "resolved_test_gold_dir": "msl/ncam/labels/test/masked-gold-min3-100agree",
+  "weights_source": "scratch",
+  "best_val_miou": 0.13299162685871124,
+  "val_truncated_to": 64
+}

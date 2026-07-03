@@ -34,6 +34,8 @@ env/
 !/experiments/**/manifest.json
 !/experiments/PREREG.md
 !/experiments/manifests/**
+!/experiments/manifests/**/per_image.parquet
+!/experiments/manifests/**/per_image.csv
 !/experiments/.gitkeep
 
 # === Model checkpoints / large artifacts / rasters ===

@@ -1,0 +1,2 @@
+model,backbone,variant,stratum,miou,ci_low,ci_high
+baseline,none,scratch,all,0.05597769595010467,,

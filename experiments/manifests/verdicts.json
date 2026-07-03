@@ -1,0 +1,110 @@
+{
+  "alpha": 0.1,
+  "correction": "holm",
+  "generated_git_sha": "711628e05d5d64947e98532e45dbab03bf1a0607",
+  "families": {
+    "A": {
+      "members": [
+        {
+          "comparison": "baseline_vs_unet",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'unet', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        },
+        {
+          "comparison": "baseline_vs_deeplabv3plus",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'deeplabv3plus', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        },
+        {
+          "comparison": "baseline_vs_segformer",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        }
+      ]
+    },
+    "B": {
+      "members": [
+        {
+          "comparison": "unet_pretrained_vs_scratch",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'unet', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        },
+        {
+          "comparison": "deeplabv3plus_pretrained_vs_scratch",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'deeplabv3plus', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        },
+        {
+          "comparison": "segformer_pretrained_vs_scratch",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        }
+      ]
+    },
+    "C": {
+      "members": [
+        {
+          "comparison": "segformer_vs_unet",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        },
+        {
+          "comparison": "segformer_vs_deeplabv3plus",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+        }
+      ]
+    },
+    "E": {
+      "members": [
+        {
+          "comparison": "dinov3_sat_vs_baseline",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'dinov3_sat', 'variant': 'finetuned', 'stratum': 'all'} (backbone=None)"
+        },
+        {
+          "comparison": "sam_zeroshot_vs_baseline",
+          "decision": "deferred",
+          "reason": "no canonical run for {'model': 'sam', 'variant': 'zeroshot', 'stratum': 'all'} (backbone=None)"
+        }
+      ]
+    },
+    "D": {
+      "members": [
+        {
+          "comparison": "best_in_rover_vs_cross_rover",
+          "decision": "deferred",
+          "reason": "missing cross_rover rows for subject and/or baseline"
+        }
+      ]
+    }
+  },
+  "hypotheses": {
+    "H0": {
+      "decision": "deferred",
+      "evidence": "H0 holds iff H1 is not rejected (reported honestly)."
+    },
+    "H1": {
+      "decision": "deferred",
+      "evidence": "Family A vs baseline, Holm alpha=0.10."
+    },
+    "H2": {
+      "decision": "deferred",
+      "evidence": "Family B pretrained vs scratch, Holm alpha=0.10."
+    },
+    "H3": {
+      "decision": "deferred",
+      "evidence": "Family C segformer-cnn two-sided + per-class strata."
+    },
+    "H4": {
+      "decision": "deferred",
+      "evidence": {
+        "reason": "missing cross_rover rows for subject and/or baseline"
+      }
+    },
+    "H5": {
+      "decision": "deferred",
+      "evidence": "Family E on gpu_full; deferred members lack ok runs (5.8)."
+    }
+  }
+}
