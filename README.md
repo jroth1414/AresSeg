@@ -37,9 +37,11 @@ The full pipeline + smoke tests run CPU-only. Full model training runs on a CUDA
 
 ## Status
 
-MS0 (scaffold) and MS1 (AI4Mars data pipeline) are **done and verified against the on-disk
-merged-0.6 layout**: camera-aware `build_index` (MSL ncam-scoped; MER images from
+MS0 (scaffold), MS1 (AI4Mars data pipeline), and MS2 (models) are **done**. MS1 is verified against
+the on-disk merged-0.6 layout: camera-aware `build_index` (MSL ncam-scoped; MER images from
 `images/{eff,test}`), pinned `masked-gold-min3-100agree` test sets (16,064 train / 322 MSL test /
-204 MER test), canonical camera-qualified `name` join keys, by-image splits. MS2 (model zoo +
-Lightning training) is built except `models/foundation.py`. Next: MS2 tail, then MS3 (configs,
-eval/stats, `run_experiment.py`).
+204 MER test), canonical camera-qualified `name` join keys, by-image splits. MS2 covers the model
+zoo (baseline/U-Net/DeepLabV3+/SegFormer), CE+Dice loss, Lightning training module, and the gated
+H5 foundation arms (`foundation.py`: DINOv3-SAT frozen backbone + head, SAM zero-shot,
+skip-and-log on CPU/missing weights). Next: MS3 (configs, eval/stats, `run_experiment.py`,
+pre-registration).

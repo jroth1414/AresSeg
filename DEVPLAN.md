@@ -19,10 +19,12 @@ conversation context**, given only this file + the repo, must reach the **same r
 H0–H5 verdicts** as any other agent. Every load-bearing constant is pinned below. Do not invent
 versions, paths, thresholds, or file names.
 
-**ONE-LINE STATUS (2026-07-01): MS0 and MS1 are DONE (MS1 fixed + re-verified against the real
-on-disk layout: 16064/322/204 count asserts green; 27 pytest tests green, ruff+black clean); MS2 is
-PARTIAL. RESUME POINT → build `models/foundation.py` (MS2 tail), then `configs/*`, `eval/*`, and
-`scripts/{run_experiment,analyze_results,merge_results}.py` + `run_gpu.sh` (MS3 → MS4 → MS5).**
+**ONE-LINE STATUS (2026-07-02): MS0, MS1, and MS2 are DONE (MS2 gate C — the `run_experiment.py`
+contract-valid smoke — runs with MS3 by design; 33 pytest tests green, ruff+black clean). RESUME
+POINT → MS3: `configs/*`, `eval/*`, `scripts/{run_experiment,analyze_results,merge_results}.py`,
+`experiments/PREREG.md` (then MS4 runs → MS5 paper). NOTE for MS3 PREREG: the SAM H5 arm's
+class-assignment protocol (region-oracle majority = an explicit upper bound; see the
+`models/foundation.py` module docstring) must be frozen in PREREG.md before any test-set number.**
 
 > **✅ RESOLVED (2026-07-01, branch `phase-ms1-fix`).** The two MS1 defects that blocked all training
 > are **fixed and re-verified against the on-disk dataset**:
@@ -55,8 +57,11 @@ PARTIAL. RESUME POINT → build `models/foundation.py` (MS2 tail), then `configs
     and the min1-vs-min3 discriminator.
   - `.git/hooks/commit-msg`, `.gitignore`, `requirements*.txt`, `.env.example`, `pyproject.toml`
   - AI4Mars dataset already downloaded and extracted locally (see §4).
-- **REMAINING in MS2:** `src/marsseg/models/foundation.py` (DINOv3-SAT frozen backbone + head; SAM
-  zero-shot; skip-and-log if weights/GPU absent).
+- **MS2 tail DONE 2026-07-02:** `src/marsseg/models/foundation.py` — DINOv3-SAT frozen ViT-L/16
+  backbone + trainable conv head; SAM ViT-B zero-shot generator; skip-and-log gating covers the
+  pre-load gates AND load-path failures (pending HF approval / bad token scope / corrupt ckpt →
+  logged skip, never a crash); routed through `zoo.build_model`, which gained an optional
+  `sam_checkpoint` kwarg so config key `model.sam_checkpoint` (§6) reaches the arm.
 - **NOT STARTED:** `configs/*` (empty), `src/marsseg/eval/*` (only `__init__.py`),
   `scripts/{run_experiment,analyze_results,merge_results}.py`, `scripts/run_gpu.sh`,
   `experiments/PREREG.md`, the SAM checkpoint fetch, the paper.
@@ -771,7 +776,7 @@ src/marsseg/
                         make_splits by-image; class_pixel_counts; name is a hard key)                    [BUILT MS1 — §4.3 FIXED]
            transforms.py (albumentations; hflip + photometric only, NO vflip/scale/crop; ImageNet norm) [BUILT MS1]
   models/  zoo.py       (build_model registry: baseline/unet/deeplabv3plus/segformer — SINGLE entry point) [BUILT MS2]
-           foundation.py (DINOv3 ViT-L/16 SAT frozen backbone + head; SAM ViT-B zero-shot; skip-and-log) [TO BUILD MS2]
+           foundation.py (DINOv3 ViT-L/16 SAT frozen backbone + head; SAM ViT-B zero-shot; skip-and-log) [BUILT MS2]
   train/   loss.py      (DiceLoss + CombinedLoss = CE + Dice, ignore_index=255)                           [BUILT MS2]
            lit.py       (SegLitModule + SegDataModule — PyTorch Lightning; NO trainer.py)                 [BUILT MS2]
   eval/    metrics.py   (miou/per_class_iou/pixel_acc/boundary_f1, ignore=255)                            [TO BUILD MS3]
@@ -836,7 +841,7 @@ Interpreter is `.venv/Scripts/python.exe` (Windows) or `.venv/bin/python` (V100)
 |---|---|---|---|
 | **MS0 — setup** | **DONE** (incl. the §3 `.env.example`/DINOv3 fix, 2026-07-01) | scaffold, utils, CI, `check_env`, commit-msg hook, gitignore, `.env.example` | `.venv/Scripts/python.exe scripts/check_env.py` → last line `core OK`, prints `profile=windows_cpu`, exit 0; `.venv/Scripts/python.exe -m pytest tests/test_smoke.py -q` → all pass; `.venv/Scripts/python.exe -m ruff check .` → `All checks passed!`; `.venv/Scripts/python.exe -m black --check .` → clean. |
 | **MS1 — data** | **DONE (fixed + re-verified 2026-07-01)** — §4.1 camera/pairing + §4.3 `name` fixes applied; real-layout count asserts green on this box | apply §4.1 camera/pairing fix + §4.3 `name` fix; add real-layout count asserts | `.venv/Scripts/python.exe -m pytest tests/test_data.py -q` → all pass, **including** new asserts: `build_index(DATA_ROOT,"msl")` → `len(train)==16064` and `len(test)==322` (against **min3**); `build_index(DATA_ROOT,"mer")` → `len(test)==204`, `train==[]`; every record has a non-empty unique camera-qualified `name`; `make_splits(val_frac=0.2, seed=1414)` → `set(train_names) & set(val_names) == set()`. Item contract = `{image FloatTensor (3,H,W), mask LongTensor (H,W) in {0,1,2,3,255}, name, rover}`. |
-| **MS2 — models** | **PARTIAL** (zoo/loss/lit + 15 tests DONE; `foundation.py` remains; `run_experiment.py` smoke is MS3-gated) | build `models/foundation.py`; add contract test | (A) `.venv/Scripts/python.exe -m pytest tests/test_models.py -q` → pass (forward shapes `(B,4,H,W)`; unknown-model `ValueError`; combined-loss-ignore backward finite; Lightning `fast_dev_run`). (B) `build_model("dinov3_sat"|"sam", …)` returns a module OR skip-and-logs (`status="skipped"`, no crash) when weights/GPU absent. (C) **BLOCKED until MS3** authors `configs/models/baseline.yaml` + `scripts/run_experiment.py`: then `run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` writes a **contract-valid** run (§7.4) + ≥1 results row with `status ∈ {ok,skipped}`. |
+| **MS2 — models** | **DONE (2026-07-02)** — gates A+B green (33 tests: gating skip/happy/load-failure/layout contracts + zoo/loss/lit); gate C runs with MS3 by design | build `models/foundation.py`; add contract test | (A) `.venv/Scripts/python.exe -m pytest tests/test_models.py -q` → pass (forward shapes `(B,4,H,W)`; unknown-model `ValueError`; combined-loss-ignore backward finite; Lightning `fast_dev_run`). (B) `build_model("dinov3_sat"|"sam", …)` returns a module OR skip-and-logs (`status="skipped"`, no crash) when weights/GPU absent. (C) **BLOCKED until MS3** authors `configs/models/baseline.yaml` + `scripts/run_experiment.py`: then `run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` writes a **contract-valid** run (§7.4) + ≥1 results row with `status ∈ {ok,skipped}`. |
 | **MS3 — eval** | **NOT STARTED** | `eval/{metrics,stats,prereg,aggregate,verdict,plots}.py` + `configs/*` + `scripts/{run_experiment,analyze_results}.py` + `PREREG.md` | `.venv/Scripts/python.exe -m pytest tests/test_eval.py -q` → pass, including: metrics + paired-bootstrap (§5.6) + verdict units; **`test_eval.py` loads `configs/hypotheses.yaml` and asserts every family/member/threshold/path is CONCRETE — no placeholder strings (`<pin…>`), `drop_threshold==0.15`, `mer.expected_test_n==204`, `data.expected_test_n==322`).** Then `.venv/Scripts/python.exe scripts/analyze_results.py --store experiments/results_store.parquet --hypotheses configs/hypotheses.yaml --out experiments/analysis/` writes `experiments/manifests/verdicts.json` with a decision in `{support, reject, deferred}` for **every** H0..H5, `ci_low ≤ value ≤ ci_high` where CIs exist, and **H5 = deferred on windows_cpu** (does NOT block H1–H4). |
 | **MS4 — runs** | **NOT STARTED** | CPU smoke; V100 full training + cross-rover (H4) + foundation (H5); merge-back | CPU smoke: `.venv/Scripts/python.exe scripts/run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` exits 0, writes contract-valid run (the override MUST actually subset to 64 train images — §5.4/§8). V100: `bash scripts/run_gpu.sh` exits 0. Merge: `.venv/bin/python scripts/merge_results.py --incoming <gpu_store.parquet> --into experiments/results_store.parquet` → store has a `miou`/`stratum=all`/`status=ok` row for each of {baseline,unet,deeplabv3plus,segformer} + a `cross_rover` row (H4), and `df.duplicated(subset=DEDUP_KEYS).sum()==0`. |
 | **MS5 — paper** | **NOT STARTED** | rubric-aligned paper + overlay figures + results binding + licenses; deliverables | `cd paper && latexmk -pdf main.tex` → exit 0, `paper/main.pdf` newer than `main.tex`; `sha256sum RESEARCH.MD` == `181361d246cc0f5e2cde7061ff3c4713815aad233fe61aeda4f8a0d496e84e31` (byte-exact); `grep -E 'H0|H1|H2|H3|H4|H5' paper/main.tex` → each hypothesis present with a decision word matching `verdicts.json`; paper includes a **Data & Model Licenses** subsection (§11). |

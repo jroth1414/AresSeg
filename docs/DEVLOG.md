@@ -119,3 +119,45 @@ this box), `ruff` clean, `black` clean, `check_env.py` → `core OK`.
 
 **Next:** MS2 tail — `models/foundation.py` (DINOv3-SAT frozen backbone + head; SAM zero-shot;
 skip-and-log gating), then MS3.
+
+## MS2 (tail) — foundation models (H5, gated) · branch `phase-ms2-foundation`
+
+Built `models/foundation.py`, closing MS2. **DINOv3-SAT arm:** `DinoV3SatSegmenter` wraps the gated
+`facebook/dinov3-vitl16-pretrain-sat493m` ViT-L/16 backbone (SAT-493M, the largest variant that fits
+the 16 GB V100) **frozen** — pinned to eval mode even under `.train()` — with a trainable
+Conv3×3–GN–GELU–Conv1×1 head over the patch-token grid, bilinear-upsampled to input resolution; a
+token-grid/prefix mismatch raises at first forward rather than silently mis-gridding. **SAM arm:**
+`SamZeroShotSegmenter` builds the ViT-B automatic mask generator from `data/weights/sam/` (eval-only;
+`forward()` raises by design), moved to CUDA at build since it never passes through the Lightning
+Trainer. **Gating (DEVPLAN §3/§5.4):** `gating_reasons()` checks cuda, `HF_TOKEN` (environment first,
+`.env` via `load_env`), the `segment-anything` import, and checkpoint presence; `build_foundation()`
+skip-and-logs (returns `None`, reason logged) — and the **load path is inside the same contract**, so
+a pending HF license approval, wrong-scope token, network error, or corrupt checkpoint logs a skip
+instead of crashing the V100 run. Routed through `zoo.build_model` (single registry entry point),
+which gained an optional `sam_checkpoint` kwarg so config key `model.sam_checkpoint` (§6) reaches the
+arm — previously a non-default path was silently ignored.
+
+**Protocol flag for MS3 PREREG (user sign-off needed):** SAM emits class-AGNOSTIC regions and AI4Mars
+has no prompt channel, so the planned H5 scoring maps each SAM region to the **majority ground-truth
+class among its valid pixels (region-oracle)** — an explicit UPPER BOUND on any zero-shot region
+labeler, documented in the module docstring. This must be frozen in `experiments/PREREG.md` before
+any test-set number is computed.
+
+**Adversarial review pass (multi-agent, 3 lenses + refuter votes).** Confirmed and fixed: gate B's
+"returns a module" arm had zero coverage (a mutation returning `None` unconditionally passed the
+suite); the stub-ViT forward test was value-blind (dropped `transpose`, gh/gw swap, and wrong-end
+prefix slicing all survived — now caught by a positional-token stub with exact bilinear-corner
+asserts on a non-square 2×4 grid); the "log" half of skip-and-log was unasserted (marsseg loggers
+set `propagate=False`, so caplog can't see them — an injected recorder logger now can); the skip
+test was environment-inverted on a provisioned V100 (could even trigger a gated download inside
+pytest — now the cuda gate is forced off, deterministic on any box); gate isolation gaps
+(cuda-alone, cuda-gates-both-arms, sam all-pass). Plus the three correctness items above
+(load-failure skip, SAM device move, `sam_checkpoint` plumb-through), found by the review's
+correctness lens.
+
+**Gate (MS2, green):** gates A+B — 33 pytest tests pass, `ruff` clean, `black` clean. Gate C (the
+`run_experiment.py` contract-valid smoke) is **MS3-gated by design** and rolls into the MS3 gate.
+
+**Next:** MS3 — `configs/{data,models/*,hypotheses}.yaml`, `eval/{metrics,stats,prereg,aggregate,
+verdict,plots}.py`, `scripts/{run_experiment,analyze_results}.py`, `experiments/PREREG.md` (freeze
+the SAM region-oracle decision there), then the MS2-C/MS4 CPU smoke.
