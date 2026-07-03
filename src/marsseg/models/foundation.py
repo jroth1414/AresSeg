@@ -39,6 +39,10 @@ SAM_CHECKPOINT_DEFAULT = REPO_ROOT / "data" / "weights" / "sam" / "sam_vit_b_01e
 FOUNDATION_MODELS = ("dinov3_sat", "sam")
 
 
+def _sam_importable() -> bool:
+    return importlib.util.find_spec("segment_anything") is not None
+
+
 def gating_reasons(name: str, sam_checkpoint: str | os.PathLike | None = None) -> list[str]:
     """Why ``name`` cannot run here (empty list = all gates pass). Never raises."""
     load_env()  # populate HF_TOKEN from .env if present (does not override real env)
@@ -49,7 +53,7 @@ def gating_reasons(name: str, sam_checkpoint: str | os.PathLike | None = None) -
         if not os.environ.get("HF_TOKEN"):
             reasons.append("HF_TOKEN missing/empty (gated DINOv3 weights need a HF read token)")
     elif name == "sam":
-        if importlib.util.find_spec("segment_anything") is None:
+        if not _sam_importable():
             reasons.append("segment-anything not installed (requirements-extras.txt)")
         ckpt = Path(sam_checkpoint or SAM_CHECKPOINT_DEFAULT)
         if not ckpt.is_file():
@@ -149,12 +153,25 @@ class SamZeroShotSegmenter(nn.Module):
 def build_foundation(
     name: str, num_classes: int = 4, sam_checkpoint: str | os.PathLike | None = None
 ) -> nn.Module | None:
-    """Build a gated foundation model, or skip-and-log: return ``None`` with the reason logged."""
+    """Build a gated foundation model, or skip-and-log: return ``None`` with the reason logged.
+
+    Load-path failures are ALSO skip-and-logged (pending HF gate approval / token without
+    gated-repo scope / network error / corrupt checkpoint): the never-hard-crash contract covers
+    the whole build, and the logged reason lands in the skipped results row + manifest (MS3).
+    """
     name = name.lower()
     reasons = gating_reasons(name, sam_checkpoint=sam_checkpoint)  # raises on unknown name
     if reasons:
         log.warning("foundation arm %r skipped: %s", name, "; ".join(reasons))
         return None
-    if name == "dinov3_sat":
-        return _load_dinov3(num_classes)
-    return SamZeroShotSegmenter(sam_checkpoint or SAM_CHECKPOINT_DEFAULT)
+    try:
+        if name == "dinov3_sat":
+            return _load_dinov3(num_classes)
+        model = SamZeroShotSegmenter(sam_checkpoint or SAM_CHECKPOINT_DEFAULT)
+        if torch.cuda.is_available():
+            # SAM never passes through the Lightning Trainer, so nothing else moves it off CPU
+            model = model.to("cuda")
+        return model
+    except Exception as e:  # contract: gated arms never hard-crash the pipeline
+        log.warning("foundation arm %r skipped: load failed: %r", name, e)
+        return None

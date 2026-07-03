@@ -80,25 +80,107 @@ def test_lightning_fast_dev_run(tmp_path):
 # --------------------------------------------------------------------------------------
 
 
-def test_foundation_skips_and_logs_on_this_box():
-    """windows_cpu + empty HF_TOKEN + no SAM extras/ckpt => both arms return None, no raise."""
+class _RecLogger:
+    """Captures log.warning calls (marsseg loggers set propagate=False, so caplog can't)."""
+
+    def __init__(self):
+        self.msgs = []
+
+    def warning(self, msg, *args):
+        self.msgs.append(msg % args if args else msg)
+
+
+def test_foundation_skips_and_logs_when_gated(monkeypatch):
+    """Gate B skip arm, deterministic on ANY box (cuda gate forced off): None + reason logged.
+
+    No skipif needed and no network possible — the gate trips before any load path.
+    """
+    from marsseg.models import foundation
+
+    rec = _RecLogger()
+    monkeypatch.setattr(foundation, "has_cuda", lambda: False)
+    monkeypatch.setattr(foundation, "log", rec)
     assert build_model("dinov3_sat") is None
     assert build_model("sam") is None
+    assert len(rec.msgs) == 2  # the "log" half of skip-and-log is contract, not decoration
+    assert "dinov3_sat" in rec.msgs[0] and "cuda" in rec.msgs[0]
+    assert "sam" in rec.msgs[1] and "cuda" in rec.msgs[1]
+
+
+def test_foundation_happy_paths_through_registry(monkeypatch, tmp_path):
+    """Gate B 'returns a module' arm, offline: gates pass, loaders stubbed, kwargs plumb through."""
+    from marsseg.models import foundation
+
+    monkeypatch.setattr(foundation, "has_cuda", lambda: True)
+    monkeypatch.setenv("HF_TOKEN", "hf_dummy")
+    sentinel = torch.nn.Identity()
+    seen = {}
+
+    def fake_load(num_classes):
+        seen["num_classes"] = num_classes
+        return sentinel
+
+    monkeypatch.setattr(foundation, "_load_dinov3", fake_load)
+    assert build_model("dinov3_sat", num_classes=4) is sentinel
+    assert seen["num_classes"] == 4
+
+    class _StubSam(torch.nn.Module):
+        def __init__(self, checkpoint, model_type="vit_b"):
+            super().__init__()
+            seen["ckpt"] = str(checkpoint)
+
+    ckpt = tmp_path / "sam_vit_b.pth"
+    ckpt.write_bytes(b"x")
+    monkeypatch.setattr(foundation, "_sam_importable", lambda: True)
+    monkeypatch.setattr(foundation, "SamZeroShotSegmenter", _StubSam)
+    out = build_model("sam", sam_checkpoint=str(ckpt))
+    assert isinstance(out, _StubSam)
+    assert seen["ckpt"] == str(ckpt)  # model.sam_checkpoint reaches the arm via the registry
+
+
+def test_foundation_load_failure_skips_not_raises(monkeypatch):
+    """Gates pass but the load blows up (e.g. HF 403 pending license) => skip-and-log, no crash."""
+    from marsseg.models import foundation
+
+    rec = _RecLogger()
+    monkeypatch.setattr(foundation, "has_cuda", lambda: True)
+    monkeypatch.setenv("HF_TOKEN", "hf_dummy")
+    monkeypatch.setattr(foundation, "log", rec)
+
+    def boom(num_classes):
+        raise RuntimeError("403 Forbidden: gated repo, license approval pending")
+
+    monkeypatch.setattr(foundation, "_load_dinov3", boom)
+    assert build_model("dinov3_sat") is None
+    assert any("load failed" in m and "403" in m for m in rec.msgs)
 
 
 def test_foundation_gating_reasons(monkeypatch, tmp_path):
     from marsseg.models import foundation
 
-    # all dinov3 gates pass when cuda + token are present
+    ckpt = tmp_path / "sam_vit_b.pth"
+    ckpt.write_bytes(b"x")
+    # dinov3: all gates pass
     monkeypatch.setattr(foundation, "has_cuda", lambda: True)
     monkeypatch.setenv("HF_TOKEN", "hf_dummy")
     assert foundation.gating_reasons("dinov3_sat") == []
-    # each gate trips independently and is named in the reason
+    # token gate ALONE (cuda still True)
     monkeypatch.setenv("HF_TOKEN", "")
-    assert any("HF_TOKEN" in r for r in foundation.gating_reasons("dinov3_sat"))
+    reasons = foundation.gating_reasons("dinov3_sat")
+    assert len(reasons) == 1 and "HF_TOKEN" in reasons[0]
+    # cuda gate ALONE (token restored)
+    monkeypatch.setenv("HF_TOKEN", "hf_dummy")
     monkeypatch.setattr(foundation, "has_cuda", lambda: False)
-    assert any("cuda" in r for r in foundation.gating_reasons("dinov3_sat"))
-    # sam: import + checkpoint gates (segment-anything is not installed on this box)
+    reasons = foundation.gating_reasons("dinov3_sat")
+    assert len(reasons) == 1 and "cuda" in reasons[0]
+    # the cuda gate applies to BOTH arms (5.4 knob row), and sam can fully pass
+    monkeypatch.setattr(foundation, "_sam_importable", lambda: True)
+    reasons = foundation.gating_reasons("sam", sam_checkpoint=ckpt)
+    assert len(reasons) == 1 and "cuda" in reasons[0]
+    monkeypatch.setattr(foundation, "has_cuda", lambda: True)
+    assert foundation.gating_reasons("sam", sam_checkpoint=ckpt) == []
+    # sam import + checkpoint gates, each named independently
+    monkeypatch.setattr(foundation, "_sam_importable", lambda: False)
     reasons = foundation.gating_reasons("sam", sam_checkpoint=tmp_path / "missing.pth")
     assert any("segment-anything" in r for r in reasons)
     assert any("checkpoint absent" in r for r in reasons)
@@ -140,3 +222,32 @@ def test_dinov3_head_forward_contract():
     )
     with pytest.raises(RuntimeError, match="token grid mismatch"):
         bad(torch.randn(1, 3, 64, 64))
+
+
+def test_dinov3_head_spatial_layout():
+    """Value-level grid contract: row-major patch layout, FIRST prefix tokens dropped, channels
+    kept per-token (shape-only asserts are blind to transpose/gh-gw-swap/wrong-end-slice bugs)."""
+    from types import SimpleNamespace
+
+    from marsseg.models.foundation import DinoV3SatSegmenter
+
+    class _PosViT(torch.nn.Module):
+        def forward(self, pixel_values):
+            b, _, h, w = pixel_values.shape
+            n = (h // 16) * (w // 16)
+            pos = torch.arange(n, dtype=torch.float32)
+            patches = torch.stack([pos, 1000.0 + pos], dim=1)  # token i: (i, 1000+i)
+            prefix = torch.full((3, 2), -7.0)
+            tokens = torch.cat([prefix, patches], dim=0).unsqueeze(0).expand(b, -1, -1)
+            return SimpleNamespace(last_hidden_state=tokens)
+
+    m = DinoV3SatSegmenter(
+        _PosViT(), hidden_size=2, patch_size=16, num_prefix_tokens=3, num_classes=4
+    )
+    m.head = torch.nn.Identity()  # expose the reshaped grid itself
+    out = m(torch.zeros(1, 3, 32, 64))  # 2x4 patch grid; non-square catches gh/gw swaps
+    assert tuple(out.shape) == (1, 2, 32, 64)
+    # bilinear corners of a 2x4 grid upsampled to 32x64 hit the grid corners exactly
+    corners = [out[0, 0, 0, 0], out[0, 0, 0, -1], out[0, 0, -1, 0], out[0, 0, -1, -1]]
+    assert [round(float(v)) for v in corners] == [0, 3, 4, 7]  # row-major, prefix gone
+    assert round(float(out[0, 1, 0, 0])) == 1000  # channel identity survives the reshape
