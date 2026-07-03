@@ -1,0 +1,4 @@
+# SegFormer MiT-B2, ADE-pretrained (larger transformer arm). zoo arg 'b2'; store label 'mit-b2'.
+model: {name: segformer, backbone: b2, results_backbone: mit-b2, pretrained: true}
+train: {batch_size: 8, max_epochs: 50, lr: 3e-4, weight_decay: 1e-4, dice_weight: 1.0,
+        ignore_index: 255, early_stop_patience: 10, grad_clip: 1.0}

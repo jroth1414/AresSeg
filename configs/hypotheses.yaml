@@ -1,0 +1,40 @@
+# Frozen hypothesis-testing protocol (DEVPLAN 3 / 5.5 / 5.6-5.9). Owner: src/marsseg/eval/.
+# Every threshold/path/count is CONCRETE; tests/test_eval.py asserts no placeholders survive.
+alpha: 0.10
+correction: holm
+ci_level: 0.90
+primary_metric: miou
+per_class_metric: iou
+descriptive_only: [pixel_acc, boundary_f1]   # NEVER tested
+stats:
+  n_resamples: 10000
+  resampling_unit: image
+  ci_method: percentile
+  bootstrap_seed: 0
+  rng: numpy_default_rng          # np.random.default_rng(0); one draw advanced per replicate (5.6)
+  seed_reset_per_comparison: true # each comparison re-seeds default_rng(0); deterministic + independent
+  p_estimator: plus_one           # p = (1 + #{...}) / (n_resamples + 1)  (5.6)
+  fixed_class_set: full_split_present   # classes with union>0 over the FULL split, fixed before bootstrap
+  empty_class_in_resample: iou_zero     # a fixed-set class with union==0 in a resample contributes IoU=0
+  mcnemar: {unit: pixel, scope: valid_pixels_only, correction: continuity, report: secondary_only}
+canonical_run_selection:            # how a comparison id resolves to ONE run_id (5.9)
+  filter: {seed: 1414, profile: gpu_full, status: ok}
+  tie_break: max_manifest_timestamp_utc   # if >1 remain for a (model,backbone,variant,stratum), take newest; if still tied, raise
+families:
+  A: {members: [baseline_vs_unet, baseline_vs_deeplabv3plus, baseline_vs_segformer]}
+  B: {members: [unet_pretrained_vs_scratch, deeplabv3plus_pretrained_vs_scratch, segformer_pretrained_vs_scratch]}
+  C: {members: [segformer_vs_unet, segformer_vs_deeplabv3plus]}   # delta orientation: segformer - cnn
+  D: {members: [best_in_rover_vs_cross_rover]}
+  E: {members: [dinov3_sat_vs_baseline, sam_zeroshot_vs_baseline]}
+hypotheses:
+  H1: {family: A, test: paired_bootstrap, statistic: delta_miou, tail: greater,
+       metric: miou, decision_rule: "reject_H0 if holm_p < 0.10 for >=1 member (delta>0)"}
+  H2: {family: B, test: paired_bootstrap, statistic: delta_miou, tail: greater, metric: miou,
+       decision_rule: "support if holm_p < 0.10 for >=1 member (delta>0)"}
+  H3: {family: C, test: paired_bootstrap, tail: two_sided, strata: [all, per_class], metric: miou,
+       delta_orientation: "segformer_minus_cnn", per_class_metric: iou,
+       decision_rule: "support a direction (sign(observed delta)) iff holm_p < 0.10 for that member"}
+  H4: {family: D, test: threshold_plus_ci, statistic: miou_drop, drop_threshold: 0.15,
+       emits_p_value: false, decision_rule: "support iff drop < 0.15 AND cross_rover_ci_low > baseline_on_MER_miou"}
+  H5: {family: E, gated: true, decided_on_profile: gpu_full, on_missing_gpu: deferred,
+       partial_gpu_rule: "holm over ok members only; support iff >=1 ok member holm_p<0.10 (delta>0); reject if all ok fail; deferred if zero ok members"}

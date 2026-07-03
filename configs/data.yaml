@@ -1,0 +1,28 @@
+# Frozen data protocol (DEVPLAN 5.4 / 5.5). Paths relative to repo root; gold dirs include the
+# camera segment. Reported dataset = MSL ncam only; mcam excluded; MER = cross-rover test only.
+data:
+  root: data/raw/ai4mars/ai4mars-dataset-merged-0.6
+  rover: msl
+  camera: ncam                 # PRIMARY grayscale navcam; mcam is excluded
+  val_frac: 0.2
+  size: 512
+  seed: 1414
+  split_by: image
+  split_seed: 1414
+  test_gold_dir: msl/ncam/labels/test/masked-gold-min3-100agree   # exact on-disk path incl. camera
+  expected_test_n: 322
+  max_train_images: null       # CPU-smoke subset cap; consumed by run_experiment.py (DEVPLAN 8); null = full
+mer:
+  rover: mer
+  image_dirs: [mer/images/eff, mer/images/test]   # union; JPGs are NOT directly under mer/images/
+  test_gold_dir: mer/labels/test/masked-gold-min3-100agree
+  expected_test_n: 204
+  has_train: false             # MER has no train labels in this release
+class_weights:
+  method: inverse_freq_normalized
+  formula: "w_c = median(counts)/counts_c"
+  clip: [0.5, 10.0]
+  computed_on: train_split
+  max_images: null             # label-scan cap for class_pixel_counts; NOT the training subset
+aug: {hflip_p: 0.5, brightness_limit: 0.2, contrast_limit: 0.2, rbc_p: 0.3,
+      vflip: false, scale_crop: false}

@@ -1,0 +1,4 @@
+# TinyUNet from scratch — the H0/H1 yardstick (never pretrained).
+model: {name: baseline, backbone: null, results_backbone: none, pretrained: false}
+train: {batch_size: 8, max_epochs: 50, lr: 3e-4, weight_decay: 1e-4, dice_weight: 1.0,
+        ignore_index: 255, early_stop_patience: 10, grad_clip: 1.0}

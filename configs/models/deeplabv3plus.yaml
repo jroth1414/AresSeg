@@ -1,0 +1,4 @@
+# smp DeepLabV3+, ResNet-50 encoder, ImageNet-pretrained (H1/H2/H3 arm). Network on first use.
+model: {name: deeplabv3plus, backbone: resnet50, results_backbone: resnet50, pretrained: true}
+train: {batch_size: 8, max_epochs: 50, lr: 3e-4, weight_decay: 1e-4, dice_weight: 1.0,
+        ignore_index: 255, early_stop_patience: 10, grad_clip: 1.0}
