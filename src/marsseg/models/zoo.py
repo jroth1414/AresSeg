@@ -97,11 +97,19 @@ DEFAULT_BACKBONE = {"unet": "resnet34", "deeplabv3plus": "resnet50"}
 
 def build_model(
     name: str, num_classes: int = 4, backbone: str | None = None, pretrained: bool = True
-) -> nn.Module:
-    """Build a segmentation model. ``pretrained`` = ImageNet (smp) / ADE (SegFormer) init (H2)."""
+) -> nn.Module | None:
+    """Build a segmentation model. ``pretrained`` = ImageNet (smp) / ADE (SegFormer) init (H2).
+
+    Foundation names (``dinov3_sat``/``sam``) are gated: they may skip-and-log and return ``None``
+    when weights/GPU are absent (DEVPLAN 5.4); callers record ``status="skipped"``, never crash.
+    """
     name = name.lower()
     if name == "baseline":
         return TinyUNet(num_classes=num_classes)
+    if name in ("dinov3_sat", "sam"):
+        from .foundation import build_foundation
+
+        return build_foundation(name, num_classes=num_classes)
     if name in SMP_BUILDERS:
         import segmentation_models_pytorch as smp
 
