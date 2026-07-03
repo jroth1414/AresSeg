@@ -204,3 +204,27 @@ iou_zero/Holm-order test gaps closed, and the smoke val-cap deviation documented
 
 **Next:** MS4 — `scripts/run_gpu.sh`, the V100 sweep (7 training arms + H4 evals + H5), merge-back,
 `analyze_results.py` for real verdicts; then MS5 (paper).
+
+## MS4 (prep) — V100 turnkey handoff script · branch `phase-ms4-runs`
+
+Built `scripts/run_gpu.sh` — **bash-only** (LF endings enforced by `.gitattributes`; never run on
+Windows) — implementing DEVPLAN §2 steps 1–9 as one idempotent command on the Ubuntu V100 node:
+checkout `main` → venv (python3.11) → core deps → **cu121 torch 2.4.1 override** → extras
+(segment-anything, timm) → editable install → **pretrained-weight pre-cache** while the box has
+network (smp resnet34/resnet50 ImageNet + SegFormer b0/b2 ADE) → SAM ViT-B checkpoint fetch →
+hard `profile=gpu_full` + `core OK` gate → dataset presence check (downloads the 16 GB merged
+archive only if absent) → the **9 training arms** (resume markers under `experiments/.gpu_markers/`
+so an interrupted sweep restarts where it stopped; a failed arm is recorded and the sweep
+continues) → **H4 cross-rover evals** driven by the manifests (subject = highest `best_val_miou`
+non-baseline run with a `best.ckpt`, plus the baseline MER reference; both via
+`--eval-only <ckpt> --h4`) → the gated **H5 arms** (skip-and-log without HF_TOKEN/ckpt) →
+`analyze_results.py` → a timestamped store export plus printed merge-back/commit instructions
+(committing on the V100 must keep author = John Roth, no AI co-author). Verified on this box:
+`bash -n` clean, pure-LF bytes, and the H4 selection helper tested against both the real
+CPU-only tree (correctly selects nothing) and a synthetic 3-manifest gpu_full tree (correctly
+picks the best subject + baseline). Also wired an optional `train.num_workers` config knob
+through the Lightning DataModule and both eval loaders (default 0, verdict-neutral;
+`run_gpu.sh` passes 8) so the 50-epoch sweep is not bottlenecked on single-threaded JPEG decode.
+
+**Gate:** full suite still green after the wiring (53 tests, ruff, black). MS4 remains OPEN —
+the V100 execution + merge-back are the remaining work; MS5 (paper) after that.

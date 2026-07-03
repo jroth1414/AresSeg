@@ -107,6 +107,7 @@ def evaluate_records(
     run_id: str,
     batch_size: int = 8,
     device: str = "cpu",
+    num_workers: int = 0,
 ) -> list[dict]:
     """Best-ckpt evaluation: write preds/<split>/<name>.png + return per-image rows (7.4)."""
     import cv2
@@ -114,7 +115,7 @@ def evaluate_records(
     from torch.utils.data import DataLoader
 
     ds = SegDataset(records, eval_transform(size))
-    loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=0)
+    loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     pred_dir = run_dir / "preds" / split
     pred_dir.mkdir(parents=True, exist_ok=True)
     model = model.to(device).eval()
@@ -362,6 +363,7 @@ def main(argv=None) -> int:
             splits["train"],
             splits["val"],
             batch_size=int(tcfg["batch_size"]),
+            num_workers=int(tcfg.get("num_workers", 0)),  # loader workers only; verdict-neutral
             size=int(dcfg["size"]),
         )
         ckpt_cb = ModelCheckpoint(
@@ -405,6 +407,7 @@ def main(argv=None) -> int:
         run_id=run_id,
         batch_size=int(tcfg["batch_size"]),
         device=device,
+        num_workers=int(tcfg.get("num_workers", 0)),
     )
     stages.append("eval_test_msl")
     if args.h4:
@@ -424,6 +427,7 @@ def main(argv=None) -> int:
             run_id=run_id,
             batch_size=int(tcfg["batch_size"]),
             device=device,
+            num_workers=int(tcfg.get("num_workers", 0)),
         )
         stages.append("eval_test_mer")
 
