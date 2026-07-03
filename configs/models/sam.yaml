@@ -1,0 +1,7 @@
+# H5 foundation arm: SAM ViT-B zero-shot (variant: zeroshot; eval-only, never trained).
+# GATED: needs cuda + segment-anything + the checkpoint below; otherwise skip-and-logs (5.4).
+# Scoring: region-oracle assignment, frozen in experiments/PREREG.md.
+model: {name: sam, backbone: null, results_backbone: vit-b, pretrained: true,
+        sam_checkpoint: data/weights/sam/sam_vit_b_01ec64.pth}
+train: {batch_size: 8, max_epochs: 50, lr: 3e-4, weight_decay: 1e-4, dice_weight: 1.0,
+        ignore_index: 255, early_stop_patience: 10, grad_clip: 1.0}

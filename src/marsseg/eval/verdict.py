@@ -101,6 +101,25 @@ def _manifest(manifests_dir: Path, run_id: str) -> dict:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
+def _best_val(manifests_dir: Path, run_id: str) -> float | None:
+    """Numeric best_val_miou or None (eval-only manifests may record null — never compare None)."""
+    v = _manifest(manifests_dir, run_id).get("best_val_miou")
+    return float(v) if isinstance(v, (int, float)) else None
+
+
+def _newest(manifests_dir: Path, run_ids) -> str:
+    """Newest run by manifest timestamp; exact tie raises (5.9 — do not guess)."""
+    run_ids = sorted(run_ids)
+    if len(run_ids) == 1:
+        return run_ids[0]
+    stamps = {r: _manifest(manifests_dir, r).get("timestamp_utc", "") for r in run_ids}
+    newest = max(stamps.values())
+    winners = [r for r, t in stamps.items() if t == newest]
+    if len(winners) > 1:
+        raise ValueError(f"canonical-run tie on timestamp_utc: {winners}")
+    return winners[0]
+
+
 def resolve_run(
     store: pd.DataFrame,
     selector: dict,
@@ -122,27 +141,31 @@ def resolve_run(
     ]
     if df.empty:
         raise Unresolvable(f"no canonical run for {selector} (backbone={backbone})")
-    # multiple BACKBONES for one (model, variant, stratum): best manifest best_val_miou wins
+    # multiple BACKBONES for one (model, variant, stratum): best manifest best_val_miou wins;
+    # each backbone is scored from its NEWEST run, and null scores fall back to timestamps
     if df["backbone"].nunique() > 1:
         scores = {
-            bb: _manifest(manifests_dir, sub.iloc[0]["run_id"]).get("best_val_miou", float("-inf"))
+            bb: _best_val(manifests_dir, _newest(manifests_dir, sub["run_id"].unique()))
             for bb, sub in df.groupby("backbone")
         }
-        best = max(scores.values())
-        winners = [bb for bb, s in scores.items() if s == best]
+        numeric = {bb: s for bb, s in scores.items() if s is not None}
+        if numeric:
+            best = max(numeric.values())
+            winners = [bb for bb, s in numeric.items() if s == best]
+        else:  # no val scores recorded anywhere: newest run's backbone wins
+            stamps = {
+                bb: _manifest(manifests_dir, _newest(manifests_dir, sub["run_id"].unique())).get(
+                    "timestamp_utc", ""
+                )
+                for bb, sub in df.groupby("backbone")
+            }
+            newest = max(stamps.values())
+            winners = [bb for bb, t in stamps.items() if t == newest]
         if len(winners) > 1:
             raise ValueError(f"ambiguous backbone for {selector}: {winners} tie on best_val_miou")
         df = df[df["backbone"] == winners[0]]
     # multiple runs for the SAME tuple: newest manifest timestamp; exact tie raises
-    run_ids = sorted(df["run_id"].unique().tolist())
-    if len(run_ids) == 1:
-        return run_ids[0]
-    stamps = {r: _manifest(manifests_dir, r).get("timestamp_utc", "") for r in run_ids}
-    newest = max(stamps.values())
-    winners = [r for r, t in stamps.items() if t == newest]
-    if len(winners) > 1:
-        raise ValueError(f"canonical-run tie on timestamp_utc for {selector}: {winners}")
-    return winners[0]
+    return _newest(manifests_dir, df["run_id"].unique())
 
 
 def _per_image(manifests_dir: Path, run_id: str) -> pd.DataFrame:
@@ -271,12 +294,21 @@ def decide(
         if subjects.empty or base_mer.empty:
             raise Unresolvable("missing cross_rover rows for subject and/or baseline")
         if subjects["run_id"].nunique() > 1:  # >1 candidate: highest manifest best_val_miou
-            scores = {
-                r: _manifest(manifests_dir, r).get("best_val_miou", float("-inf"))
-                for r in subjects["run_id"].unique()
-            }
-            subjects = subjects[subjects["run_id"] == max(scores, key=scores.get)]
+            scores = {r: _best_val(manifests_dir, r) for r in subjects["run_id"].unique()}
+            numeric = {r: s for r, s in scores.items() if s is not None}
+            if numeric:
+                best = max(numeric.values())
+                winners = [r for r, s in numeric.items() if s == best]
+                if len(winners) > 1:
+                    raise ValueError(f"H4 subject tie on best_val_miou: {winners}")
+                subj_run = winners[0]
+            else:  # eval-only manifests may all lack val scores: newest wins, tie raises
+                subj_run = _newest(manifests_dir, subjects["run_id"].unique())
+            subjects = subjects[subjects["run_id"] == subj_run]
         subj_run = subjects.iloc[0]["run_id"]
+        if base_mer["run_id"].nunique() > 1:  # baseline-on-MER must be canonical too, not iloc[0]
+            base_run = _newest(manifests_dir, base_mer["run_id"].unique())
+            base_mer = base_mer[base_mer["run_id"] == base_run]
         in_rover = store[
             (store["run_id"] == subj_run)
             & (store["stratum"] == "in_rover")
@@ -345,9 +377,19 @@ def decide(
     return verdicts
 
 
-def leaderboard(store: pd.DataFrame) -> pd.DataFrame:
-    """model, backbone, variant, stratum, miou, ci_low, ci_high (status ok, newest kept last)."""
-    df = store[(store["metric"] == "miou") & (store["scope"] == "ALL") & (store["status"] == "ok")]
+def leaderboard(store: pd.DataFrame, seed: int = 1414) -> pd.DataFrame:
+    """model, backbone, variant, stratum, miou, ci_low, ci_high (status ok, primary seed).
+
+    gpu_full rows outrank windows_cpu smoke rows for the same tuple, so a post-merge CPU smoke
+    can never overwrite a GPU number; within a profile the last-appended (newest) row wins.
+    """
+    df = store[
+        (store["metric"] == "miou")
+        & (store["scope"] == "ALL")
+        & (store["status"] == "ok")
+        & (store["seed"] == seed)
+    ]
+    df = df.sort_values("profile", key=lambda s: (s == "gpu_full").astype(int), kind="stable")
     df = df.drop_duplicates(subset=["model", "backbone", "variant", "stratum"], keep="last")
     return df[["model", "backbone", "variant", "stratum", "value", "ci_low", "ci_high"]].rename(
         columns={"value": "miou"}

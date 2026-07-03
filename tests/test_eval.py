@@ -112,8 +112,16 @@ def test_paired_bootstrap_default_constants():
 def test_holm_hand_case():
     #  m=3: sorted p = [.01,.03,.04] -> adj [.03,.06,.06]; order preserved on return
     assert stats.holm([0.01, 0.04, 0.03]) == pytest.approx([0.03, 0.06, 0.06])
+    # distinct adjusted values pin the ORDER MAPPING back to input positions
+    assert stats.holm([0.01, 0.4, 0.03]) == pytest.approx([0.03, 0.4, 0.06])
     assert stats.holm([0.5]) == [0.5]
     assert stats.holm([]) == []
+
+
+def test_macro_iou_zero_in_resample_rule():
+    # a fixed-set class with union==0 in a resample contributes IoU=0; denominator stays |S|
+    assert stats._macro(np.array([5, 0]), np.array([10, 0]), [0, 1]) == pytest.approx(0.25)
+    assert stats._macro(np.array([5, 7]), np.array([10, 0]), [0, 1]) == pytest.approx(0.25)
 
 
 def test_mcnemar_hand_case():
@@ -166,6 +174,49 @@ def test_aggregate_roundtrip():
     assert by[("n", "ALL", "all")]["value"] == 1
     assert by[("pixel_acc", "ALL", "all")]["value"] == pytest.approx(0.5)
     assert np.isnan(by[("iou", "bedrock", "per_class")]["value"])  # union-0 class -> NaN
+    # H4 eval runs: per-class rows must inherit in_rover/cross_rover so the two splits of one
+    # run_id never collide on DEDUP_KEYS (7.1) and merge_results cannot silently drop rows
+    cross = aggregate.store_rows(
+        df,
+        split="test_msl",
+        stratum="cross_rover",
+        run_id="r1",
+        model="unet",
+        backbone="resnet34",
+        variant="pretrained",
+        profile="gpu_full",
+        seed=1414,
+        git_sha="g",
+        config_hash="c",
+    )
+    assert all(r["stratum"] == "cross_rover" for r in cross if r["metric"] == "iou")
+
+
+def test_h4_run_store_rows_never_collide_on_dedup_keys():
+    from marsseg.utils.results import DEDUP_KEYS
+
+    counts = {
+        "inter": np.array([50, 10, 25, 5]),
+        "union": np.array([100, 20, 50, 10]),
+        "correct": 75,
+        "n_valid": 150,
+    }
+    rows = aggregate.image_rows("r1", "msl_ncam_x", "test_msl", counts, bf1=0.8)
+    rows += aggregate.image_rows("r1", "mer_test_y", "test_mer", counts, bf1=0.7)
+    df = aggregate.per_image_frame(rows)
+    kw = dict(
+        run_id="r1",
+        model="unet",
+        backbone="resnet34",
+        variant="pretrained",
+        profile="gpu_full",
+        seed=1414,
+        git_sha="g",
+        config_hash="c",
+    )
+    both = aggregate.store_rows(df, split="test_msl", stratum="in_rover", **kw)
+    both += aggregate.store_rows(df, split="test_mer", stratum="cross_rover", **kw)
+    assert int(pd.DataFrame(both).duplicated(subset=DEDUP_KEYS).sum()) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +312,61 @@ def test_decide_empty_store_defers_everything(tmp_path):
 # ---------------------------------------------------------------------------
 # config concreteness (section 9 MS3 gate) + prereg seal
 # ---------------------------------------------------------------------------
+
+
+def test_comparisons_table_pins_section_10():
+    """The COMPARISONS table IS the section-10 row-pattern spec — pin every field literally."""
+    c = verdict.COMPARISONS
+    for member in ("baseline_vs_unet", "baseline_vs_deeplabv3plus", "baseline_vs_segformer"):
+        assert c[member]["family"] == "A" and c[member]["tail"] == "greater"
+        assert c[member]["a"]["variant"] == "pretrained" and c[member]["a"]["stratum"] == "all"
+        assert c[member]["b"] == {"model": "baseline", "stratum": "all"}
+    assert c["baseline_vs_unet"]["a"]["model"] == "unet"
+    assert c["baseline_vs_deeplabv3plus"]["a"]["model"] == "deeplabv3plus"
+    assert c["baseline_vs_segformer"]["a"]["model"] == "segformer"
+    for member, model in (
+        ("unet_pretrained_vs_scratch", "unet"),
+        ("deeplabv3plus_pretrained_vs_scratch", "deeplabv3plus"),
+        ("segformer_pretrained_vs_scratch", "segformer"),
+    ):
+        s = c[member]
+        assert s["family"] == "B" and s["tail"] == "greater" and s["match_backbone"] is True
+        assert s["a"] == {"model": model, "variant": "pretrained", "stratum": "all"}
+        assert s["b"] == {"model": model, "variant": "scratch", "stratum": "all"}
+    for member, cnn in (
+        ("segformer_vs_unet", "unet"),
+        ("segformer_vs_deeplabv3plus", "deeplabv3plus"),
+    ):
+        s = c[member]
+        assert s["family"] == "C" and s["tail"] == "two_sided" and s["per_class"] is True
+        # delta orientation segformer - cnn: segformer MUST be side 'a'
+        assert s["a"] == {"model": "segformer", "variant": "pretrained", "stratum": "all"}
+        assert s["b"] == {"model": cnn, "variant": "pretrained", "stratum": "all"}
+    assert c["dinov3_sat_vs_baseline"]["a"] == {
+        "model": "dinov3_sat",
+        "variant": "finetuned",
+        "stratum": "all",
+    }
+    assert c["sam_zeroshot_vs_baseline"]["a"] == {
+        "model": "sam",
+        "variant": "zeroshot",
+        "stratum": "all",
+    }
+    for member in ("dinov3_sat_vs_baseline", "sam_zeroshot_vs_baseline"):
+        assert c[member]["family"] == "E" and c[member]["tail"] == "greater"
+        assert c[member]["b"] == {"model": "baseline", "stratum": "all"}
+
+
+def test_leaderboard_prefers_gpu_rows():
+    store = pd.DataFrame(
+        [
+            _store_row("run_gpu", value=0.61, profile="gpu_full"),
+            _store_row("run_cpu_smoke", value=0.05, profile="windows_cpu"),
+            _store_row("run_other_seed", value=0.99, seed=1415),
+        ]
+    )
+    lb = verdict.leaderboard(store)
+    assert len(lb) == 1 and lb.iloc[0]["miou"] == pytest.approx(0.61)
 
 
 def test_hypotheses_yaml_is_concrete():

@@ -120,12 +120,15 @@ def store_rows(
         },
         {**base, "scope": "ALL", "stratum": stratum, "metric": "n", "value": float(n_images)},
     ]
+    # per-class rows: 'per_class' for standard runs; H4 eval runs keep in_rover/cross_rover so
+    # the two splits of one run_id never collide on DEDUP_KEYS (7.1)
+    per_class_stratum = "per_class" if stratum == "all" else stratum
     for c, cls in enumerate(classes):
         rows.append(
             {
                 **base,
                 "scope": cls,
-                "stratum": "per_class",
+                "stratum": per_class_stratum,
                 "metric": "iou",
                 "value": iou_from_counts(inter_sums[c], union_sums[c]),
             }

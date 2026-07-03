@@ -350,6 +350,12 @@ def main(argv=None) -> int:
     if args.eval_only:
         state = torch.load(args.eval_only, map_location=device, weights_only=False)
         lit.load_state_dict(state["state_dict"])
+        # recover the training run's val score from the ModelCheckpoint callback state so the
+        # 5.7 "highest val_miou" subject rule stays operative on eval-only (--h4) manifests
+        for cb_state in (state.get("callbacks") or {}).values():
+            if isinstance(cb_state, dict) and cb_state.get("best_model_score") is not None:
+                best_val_miou = float(cb_state["best_model_score"])
+                break
         stages.append("load_checkpoint")
     else:
         dm = SegDataModule(
