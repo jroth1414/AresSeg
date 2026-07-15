@@ -9,6 +9,7 @@ skip-and-log contract for gated models ("skipped").
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -33,6 +34,8 @@ RESULT_COLUMNS = [
     "seed",
     "git_sha",
     "config_hash",  # dedup key for merging GPU-profile rows
+    "total_parameters",
+    "trainable_parameters",
 ]
 
 # Dedup key used by scripts/merge_results.py when merging GPU-profile rows back in.
@@ -48,23 +51,54 @@ DEDUP_KEYS = [
 ]
 
 
+def _temporary_sibling(path: Path) -> Path:
+    """Create a same-filesystem temporary path suitable for an atomic os.replace."""
+    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    os.close(fd)
+    return Path(name)
+
+
 def append_results(
     rows: list[dict],
     parquet_path: os.PathLike = RESULTS_STORE_PARQUET,
     csv_path: os.PathLike = RESULTS_STORE_CSV,
 ) -> Path:
-    """Append metric rows to the results store (parquet + csv). Returns the parquet path."""
-    df = pd.DataFrame(rows)
-    for c in RESULT_COLUMNS:
-        if c not in df.columns:
-            df[c] = None
-    df = df[RESULT_COLUMNS]
+    """Upsert metric rows and atomically replace the parquet and CSV mirrors.
+
+    Re-running a completed arm no longer duplicates its rows: the canonical result identity in
+    DEDUP_KEYS is last-write-wins. Both complete files are staged beside their destinations
+    before either visible store is replaced.
+    """
+    incoming = pd.DataFrame(rows)
+    for column in RESULT_COLUMNS:
+        if column not in incoming.columns:
+            incoming[column] = None
+    incoming = incoming[RESULT_COLUMNS]
+
     pq = Path(parquet_path)
+    csv = Path(csv_path)
     pq.parent.mkdir(parents=True, exist_ok=True)
+    csv.parent.mkdir(parents=True, exist_ok=True)
     if pq.exists():
-        df = pd.concat([pd.read_parquet(pq), df], ignore_index=True)
-    df.to_parquet(pq, index=False)
-    df.to_csv(csv_path, index=False)
+        existing = pd.read_parquet(pq)
+        for column in RESULT_COLUMNS:
+            if column not in existing.columns:
+                existing[column] = None
+        frame = pd.concat([existing[RESULT_COLUMNS], incoming], ignore_index=True)
+    else:
+        frame = incoming
+    frame = frame.drop_duplicates(subset=DEDUP_KEYS, keep="last", ignore_index=True)
+
+    pq_tmp = _temporary_sibling(pq)
+    csv_tmp = _temporary_sibling(csv)
+    try:
+        frame.to_parquet(pq_tmp, index=False)
+        frame.to_csv(csv_tmp, index=False)
+        os.replace(pq_tmp, pq)
+        os.replace(csv_tmp, csv)
+    finally:
+        pq_tmp.unlink(missing_ok=True)
+        csv_tmp.unlink(missing_ok=True)
     return pq
 
 

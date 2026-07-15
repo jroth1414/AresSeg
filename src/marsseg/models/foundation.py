@@ -38,6 +38,17 @@ SAM_MODEL_TYPE = "vit_b"
 SAM_CHECKPOINT_DEFAULT = REPO_ROOT / "data" / "weights" / "sam" / "sam_vit_b_01ec64.pth"
 FOUNDATION_MODELS = ("dinov3_sat", "sam")
 
+_LAST_UNAVAILABLE_REASON: dict[str, str] = {}
+
+
+def last_unavailable_reason(name: str) -> str | None:
+    """Most recent exact expected-unavailability reason for manifest persistence."""
+    return _LAST_UNAVAILABLE_REASON.get(name.lower())
+
+
+class FoundationUnavailable(RuntimeError):
+    """Expected external weight/checkpoint failure that may skip a gated reference arm."""
+
 
 def _sam_importable() -> bool:
     return importlib.util.find_spec("segment_anything") is not None
@@ -113,11 +124,14 @@ class DinoV3SatSegmenter(nn.Module):
         return F.interpolate(self.head(feats), size=(h, w), mode="bilinear", align_corners=False)
 
 
-def _load_dinov3(num_classes: int) -> DinoV3SatSegmenter:
+def _load_dinov3(num_classes: int, revision: str | None = None) -> DinoV3SatSegmenter:
     from transformers import AutoModel
 
     token = require_secret("HF_TOKEN")  # load path only; gating already verified presence
-    backbone = AutoModel.from_pretrained(DINOV3_MODEL_ID, token=token)
+    try:
+        backbone = AutoModel.from_pretrained(DINOV3_MODEL_ID, token=token, revision=revision)
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise FoundationUnavailable(f"DINOv3 weights unavailable: {exc}") from exc
     cfg = backbone.config
     return DinoV3SatSegmenter(
         backbone,
@@ -128,50 +142,69 @@ def _load_dinov3(num_classes: int) -> DinoV3SatSegmenter:
     )
 
 
-class SamZeroShotSegmenter(nn.Module):
-    """SAM ViT-B automatic mask generator (zero-shot H5 reference; eval-only, never trained).
+class SamRegionOracleUpperBound(nn.Module):
+    """SAM ViT-B region-oracle upper bound (eval-only, never trained).
 
     Not a logits-producing segmenter: call ``generate(image_hwc_uint8)`` for SAM's region
-    proposals; the H5 eval step assigns classes (region-oracle, see module docstring).
+    proposals. Ground truth assigns each proposal's class, so this is not deployable zero-shot
+    semantic segmentation.
     """
 
     def __init__(self, checkpoint: str | os.PathLike, model_type: str = SAM_MODEL_TYPE):
         super().__init__()
-        from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
+        try:
+            from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
-        self.sam = sam_model_registry[model_type](checkpoint=str(checkpoint))
-        self.generator = SamAutomaticMaskGenerator(self.sam)
+            self.sam = sam_model_registry[model_type](checkpoint=str(checkpoint))
+            self.generator = SamAutomaticMaskGenerator(self.sam)
+        except (ImportError, OSError, RuntimeError, ValueError) as exc:
+            raise FoundationUnavailable(f"SAM checkpoint unavailable: {exc}") from exc
 
     @torch.no_grad()
     def generate(self, image_hwc_uint8) -> list[dict]:
         return self.generator.generate(image_hwc_uint8)
 
     def forward(self, *_args, **_kw):
-        raise NotImplementedError("SAM is zero-shot eval-only: use .generate(image), not forward()")
+        raise NotImplementedError("SAM is region-oracle eval-only: use .generate(image)")
+
+
+# Compatibility for old imports and checkpoints; new manifests use region_oracle_upper_bound.
+SamZeroShotSegmenter = SamRegionOracleUpperBound
 
 
 def build_foundation(
-    name: str, num_classes: int = 4, sam_checkpoint: str | os.PathLike | None = None
+    name: str,
+    num_classes: int = 4,
+    sam_checkpoint: str | os.PathLike | None = None,
+    revision: str | None = None,
 ) -> nn.Module | None:
-    """Build a gated foundation model, or skip-and-log: return ``None`` with the reason logged.
+    """Build a gated foundation model, or skip and retain the exact expected failure reason.
 
-    Load-path failures are ALSO skip-and-logged (pending HF gate approval / token without
-    gated-repo scope / network error / corrupt checkpoint): the never-hard-crash contract covers
-    the whole build, and the logged reason lands in the skipped results row + manifest (MS3).
+    Gate failures and expected external load failures return ``None``. Programming errors are not
+    suppressed. ``last_unavailable_reason(name)`` exposes the retained reason to run manifests.
     """
     name = name.lower()
+    _LAST_UNAVAILABLE_REASON.pop(name, None)
     reasons = gating_reasons(name, sam_checkpoint=sam_checkpoint)  # raises on unknown name
     if reasons:
-        log.warning("foundation arm %r skipped: %s", name, "; ".join(reasons))
+        reason = "; ".join(reasons)
+        _LAST_UNAVAILABLE_REASON[name] = reason
+        log.warning("foundation arm %r skipped: %s", name, reason)
         return None
     try:
         if name == "dinov3_sat":
-            return _load_dinov3(num_classes)
-        model = SamZeroShotSegmenter(sam_checkpoint or SAM_CHECKPOINT_DEFAULT)
+            if revision is None:  # compatibility for callers/tests without an external pin
+                return _load_dinov3(num_classes)
+            return _load_dinov3(num_classes, revision=revision)
+        model = SamRegionOracleUpperBound(sam_checkpoint or SAM_CHECKPOINT_DEFAULT)
         if torch.cuda.is_available():
-            # SAM never passes through the Lightning Trainer, so nothing else moves it off CPU
-            model = model.to("cuda")
+            # SAM never passes through the Lightning Trainer, so nothing else moves it off CPU.
+            try:
+                model = model.to("cuda")
+            except RuntimeError as exc:
+                raise FoundationUnavailable(f"SAM CUDA load failed: {exc}") from exc
         return model
-    except Exception as e:  # contract: gated arms never hard-crash the pipeline
-        log.warning("foundation arm %r skipped: load failed: %r", name, e)
+    except FoundationUnavailable as exc:
+        _LAST_UNAVAILABLE_REASON[name] = str(exc)
+        log.warning("foundation arm %r skipped: load failed: %r", name, exc)
         return None

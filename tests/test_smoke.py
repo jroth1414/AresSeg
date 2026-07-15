@@ -6,8 +6,9 @@ import json
 
 import numpy as np
 
+from marsseg.utils import manifest as manifest_module
 from marsseg.utils.capabilities import detect
-from marsseg.utils.manifest import write_manifest
+from marsseg.utils.manifest import REPO_ROOT, write_manifest
 from marsseg.utils.seed import set_seed
 
 
@@ -38,3 +39,22 @@ def test_manifest_superset(tmp_path):
     m = json.loads(p.read_text(encoding="utf-8"))
     assert m["seed"] == 1414 and m["model"] == "unet"
     assert "git_sha" in m and "capabilities" in m and "config_hash" in m
+
+
+def test_git_provenance_is_repo_scoped_and_safe_directory_aware(monkeypatch):
+    calls = []
+
+    def fake_check_output(command, **kwargs):
+        calls.append((command, kwargs))
+        return "abc123\n" if command[-2:] == ["rev-parse", "HEAD"] else " M tracked.py\n"
+
+    monkeypatch.setattr(manifest_module.subprocess, "check_output", fake_check_output)
+
+    assert manifest_module._git_sha() == "abc123"
+    assert manifest_module._git_dirty() is True
+    assert len(calls) == 2
+    for command, kwargs in calls:
+        assert command[:3] == ["git", "-c", f"safe.directory={REPO_ROOT}"]
+        assert kwargs["cwd"] == REPO_ROOT
+        assert kwargs["text"] is True
+        assert kwargs["stderr"] is manifest_module.subprocess.DEVNULL

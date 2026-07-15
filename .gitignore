@@ -33,6 +33,7 @@ env/
 !/experiments/results_store.csv
 !/experiments/**/manifest.json
 !/experiments/PREREG.md
+!/experiments/PREREG_AMENDMENT_*.md
 !/experiments/manifests/**
 !/experiments/manifests/**/per_image.parquet
 !/experiments/manifests/**/per_image.csv

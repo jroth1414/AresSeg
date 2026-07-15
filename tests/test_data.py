@@ -20,7 +20,8 @@ import pytest
 from marsseg.data import ai4mars
 from marsseg.data.ai4mars import build_index, label_key
 from marsseg.data.dataset import SegDataset, class_pixel_counts, make_splits
-from marsseg.data.transforms import eval_transform
+from marsseg.data.preflight import inspect_data
+from marsseg.data.transforms import eval_transform, train_transform
 
 DATA_ROOT = Path(__file__).resolve().parents[1] / "data" / "raw" / "ai4mars"
 requires_data = pytest.mark.skipif(
@@ -244,6 +245,134 @@ def test_class_pixel_counts(tmp_path):
     idx = build_index(root, "msl")
     counts = class_pixel_counts(idx["train"], num_classes=4)
     assert counts.sum() > 0 and len(counts) == 4
+
+
+def test_train_transform_uses_aug_config():
+    image = np.zeros((8, 8, 3), dtype=np.uint8)
+    mask = np.zeros((8, 8), dtype=np.uint8)
+    mask[:, 4:] = 1
+    transform = train_transform(
+        size=8,
+        aug={
+            "hflip_p": 1.0,
+            "rbc_p": 0.0,
+            "vflip": False,
+            "scale_crop": False,
+        },
+    )
+    flipped = transform(image=image, mask=mask)["mask"]
+    assert set(flipped[:, :4].unique().tolist()) == {1}
+    assert set(flipped[:, 4:].unique().tolist()) == {0}
+
+
+def test_preflight_synthetic_contract_and_fingerprint(tmp_path):
+    root = _make_tree(tmp_path)
+    report = inspect_data(
+        root,
+        expected_msl_train=6,
+        expected_msl_test=2,
+        expected_mer_test=2,
+        require_archive=False,
+    )
+    assert report["ok"], report["errors"]
+    assert report["counts"] == {
+        "msl_train": 6,
+        "msl_test": 2,
+        "mer_train": 0,
+        "mer_test": 2,
+    }
+    assert report["masks"]["scanned"] == 10
+    assert len(report["fingerprints"]["combined_index_sha256"]) == 64
+    again = inspect_data(
+        root,
+        expected_msl_train=6,
+        expected_msl_test=2,
+        expected_mer_test=2,
+        require_archive=False,
+        scan_masks=False,
+    )
+    assert again["fingerprints"]["combined_index_sha256"] == (
+        report["fingerprints"]["combined_index_sha256"]
+    )
+
+
+def test_preflight_rejects_orphan_label_and_bad_mask(tmp_path):
+    root = _make_tree(tmp_path)
+    base = root / "ai4mars-dataset-merged-0.6"
+    orphan = base / "msl" / "ncam" / "labels" / "train" / "ORPHAN.png"
+    _write_mask(orphan, np.random.default_rng(4))
+    bad = base / "msl" / "ncam" / "labels" / "train" / "NTRAIN0.png"
+    mask = cv2.imread(str(bad), cv2.IMREAD_UNCHANGED)
+    mask[4, 4] = 9
+    cv2.imwrite(str(bad), mask)
+    report = inspect_data(
+        root,
+        expected_msl_train=6,
+        expected_msl_test=2,
+        expected_mer_test=2,
+        require_archive=False,
+    )
+    assert not report["ok"]
+    assert report["pairing"]["msl"]["unmatched_label_count"] == 1
+    assert report["masks"]["invalid_count"] == 1
+    assert any("unmatched labels" in error for error in report["errors"])
+    assert any("invalid values" in error for error in report["errors"])
+
+
+def test_download_reuses_verified_archive_without_network(monkeypatch, tmp_path):
+    import hashlib
+
+    from scripts import download_data
+
+    archive = tmp_path / "archive.zip"
+    payload = b"already complete"
+    archive.write_bytes(payload)
+    expected = hashlib.md5(payload).hexdigest()
+
+    def network_forbidden(*_args, **_kwargs):
+        raise AssertionError("verified archive must not open the network")
+
+    monkeypatch.setattr(download_data.requests, "get", network_forbidden)
+    assert download_data.download("https://invalid.test/archive", archive, expected) == archive
+    assert archive.read_bytes() == payload
+
+
+def test_download_bad_cached_file_uses_response_and_revalidates(monkeypatch, tmp_path):
+    import hashlib
+
+    from scripts import download_data
+
+    archive = tmp_path / "archive.zip"
+    archive.write_bytes(b"bad")
+    replacement = b"verified replacement"
+    expected = hashlib.md5(replacement).hexdigest()
+    seen = {}
+
+    class Response:
+        status_code = 200
+        headers = {"Content-Length": str(len(replacement))}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def iter_content(self, chunk_size):
+            assert chunk_size > 0
+            yield replacement
+
+        def raise_for_status(self):
+            raise AssertionError("status 200 must not raise")
+
+    def fake_get(_url, **kwargs):
+        seen.update(kwargs)
+        return Response()
+
+    monkeypatch.setattr(download_data.requests, "get", fake_get)
+    assert download_data.download("https://invalid.test/archive", archive, expected) == archive
+    assert archive.read_bytes() == replacement
+    assert seen["headers"] == {"Range": "bytes=3-"}
 
 
 # ---------------------------------------------------------------------------

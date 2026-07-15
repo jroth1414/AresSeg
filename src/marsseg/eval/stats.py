@@ -6,7 +6,9 @@ re-seeded at the start of every comparison; ONE index draw per replicate shared 
 AND all per-class strata of that comparison; split-level metrics recomputed from SUMMED counts;
 fixed class set S = {classes with full-split union > 0, over EITHER model}; a fixed-set class
 with union == 0 in a resample contributes IoU = 0 (macro denominator stays |S|); p = plus-one
-estimator; CI = percentile at ci_level.
+estimator; CI = percentile at ci_level. Protocol V2 generalizes the count arrays to
+``(seed, class, image)`` and uses a two-level paired bootstrap: sample training seeds, then
+sample images independently within every sampled seed. The a/b image draw remains paired.
 
 H4 (5.7) is a deterministic threshold+CI rule, NO p-value. McNemar is descriptive-only.
 """
@@ -57,6 +59,21 @@ def _p_value(deltas: np.ndarray, tail: str) -> float:
     raise ValueError(f"unknown tail {tail!r}; expected 'greater' or 'two_sided'")
 
 
+def _seeded_counts(*arrays: np.ndarray) -> tuple[np.ndarray, ...]:
+    """Normalize legacy ``(C,N)`` and V2 ``(S,C,N)`` count arrays to ``(S,C,N)``."""
+    out = []
+    for array in arrays:
+        value = np.asarray(array)
+        if value.ndim == 2:
+            value = value[None, ...]
+        if value.ndim != 3:
+            raise ValueError("count arrays must have shape (C,N) or (S,C,N)")
+        out.append(value)
+    if len({value.shape for value in out}) != 1:
+        raise ValueError("count arrays must share one (C,N) or (S,C,N) shape")
+    return tuple(out)
+
+
 def paired_bootstrap(
     inter_a: np.ndarray,
     union_a: np.ndarray,
@@ -70,49 +87,62 @@ def paired_bootstrap(
     class_names: list[str] = CLASSES,
     per_class: bool = False,
 ) -> dict:
-    """The 5.6 procedure. Inputs are (C, N) count arrays aligned on the SAME image order.
+    """The V2 5.6 procedure on aligned ``(C,N)`` or ``(S,C,N)`` count arrays.
 
     Delta orientation is a − b (caller passes candidate as a / baseline as b; segformer as a
     for Family C). Returns {'ALL': {...}} plus one entry per fixed-set class when ``per_class``,
-    each {'delta', 'ci_low', 'ci_high', 'p', 'n_images'}. All strata of one call share the same
-    replicate index draws (5.6 step 8) and the same freshly re-seeded default_rng(seed).
+    each {'delta', 'ci_low', 'ci_high', 'p', 'n_images', 'n_seeds'}. For multiple training
+    seeds, the observed statistic is the equal-weight mean of seed-level deltas. Each replicate
+    samples seeds with replacement and then images with replacement within each sampled seed;
+    all strata and both models share those draws. A one-seed input retains the legacy draw
+    sequence exactly.
     """
-    inter_a, union_a = np.asarray(inter_a), np.asarray(union_a)
-    inter_b, union_b = np.asarray(inter_b), np.asarray(union_b)
-    if not (inter_a.shape == union_a.shape == inter_b.shape == union_b.shape):
-        raise ValueError("count arrays must share one (C, N) shape")
-    n_cls, n_img = inter_a.shape
+    inter_a, union_a, inter_b, union_b = _seeded_counts(inter_a, union_a, inter_b, union_b)
+    n_seed, n_cls, n_img = inter_a.shape
     if n_img == 0:
         raise ValueError("no images to bootstrap")
     # fixed set S over the FULL split, symmetric across the two models (fixed before resampling)
-    full_union = union_a.sum(axis=1) + union_b.sum(axis=1)
+    full_union = union_a.sum(axis=(0, 2)) + union_b.sum(axis=(0, 2))
     class_set = [c for c in range(n_cls) if full_union[c] > 0]
     if not class_set:
         raise ValueError("empty fixed class set (no class has any union)")
     strata = ["ALL"] + ([class_names[c] for c in class_set] if per_class else [])
 
     def observed(stat_scope) -> float:
-        ia, ua = inter_a.sum(axis=1), union_a.sum(axis=1)
-        ib, ub = inter_b.sum(axis=1), union_b.sum(axis=1)
-        if stat_scope == "ALL":
-            return _macro(ia, ua, class_set) - _macro(ib, ub, class_set)
-        c = class_names.index(stat_scope)
-        va = ia[c] / ua[c] if ua[c] > 0 else 0.0
-        vb = ib[c] / ub[c] if ub[c] > 0 else 0.0
-        return float(va - vb)
+        seed_deltas = []
+        for s in range(n_seed):
+            ia, ua = inter_a[s].sum(axis=1), union_a[s].sum(axis=1)
+            ib, ub = inter_b[s].sum(axis=1), union_b[s].sum(axis=1)
+            if stat_scope == "ALL":
+                seed_deltas.append(_macro(ia, ua, class_set) - _macro(ib, ub, class_set))
+            else:
+                c = class_names.index(stat_scope)
+                va = ia[c] / ua[c] if ua[c] > 0 else 0.0
+                vb = ib[c] / ub[c] if ub[c] > 0 else 0.0
+                seed_deltas.append(float(va - vb))
+        return float(np.mean(seed_deltas))
 
     rng = np.random.default_rng(seed)  # seed_reset_per_comparison
     deltas = {s: np.empty(n_resamples) for s in strata}
     for b in range(n_resamples):
-        idx = rng.integers(0, n_img, size=n_img)  # ONE draw per replicate, shared everywhere
-        ia, ua = inter_a[:, idx].sum(axis=1), union_a[:, idx].sum(axis=1)
-        ib, ub = inter_b[:, idx].sum(axis=1), union_b[:, idx].sum(axis=1)
-        deltas["ALL"][b] = _macro(ia, ua, class_set) - _macro(ib, ub, class_set)
-        if per_class:
-            for c in class_set:
-                va = ia[c] / ua[c] if ua[c] > 0 else 0.0
-                vb = ib[c] / ub[c] if ub[c] > 0 else 0.0
-                deltas[class_names[c]][b] = va - vb
+        sampled_seeds = (
+            np.array([0], dtype=np.int64) if n_seed == 1 else rng.integers(0, n_seed, size=n_seed)
+        )
+        replicate = {scope: [] for scope in strata}
+        for sampled_seed in sampled_seeds:
+            idx = rng.integers(0, n_img, size=n_img)
+            ia = inter_a[sampled_seed, :, idx].sum(axis=0)
+            ua = union_a[sampled_seed, :, idx].sum(axis=0)
+            ib = inter_b[sampled_seed, :, idx].sum(axis=0)
+            ub = union_b[sampled_seed, :, idx].sum(axis=0)
+            replicate["ALL"].append(_macro(ia, ua, class_set) - _macro(ib, ub, class_set))
+            if per_class:
+                for c in class_set:
+                    va = ia[c] / ua[c] if ua[c] > 0 else 0.0
+                    vb = ib[c] / ub[c] if ub[c] > 0 else 0.0
+                    replicate[class_names[c]].append(float(va - vb))
+        for scope in strata:
+            deltas[scope][b] = float(np.mean(replicate[scope]))
     lo_q, hi_q = 100 * (1 - ci_level) / 2, 100 * (1 + ci_level) / 2
     return {
         s: {
@@ -121,6 +151,7 @@ def paired_bootstrap(
             "ci_high": float(np.percentile(deltas[s], hi_q)),
             "p": _p_value(deltas[s], tail),
             "n_images": n_img,
+            "n_seeds": n_seed,
         }
         for s in strata
     }
@@ -134,24 +165,40 @@ def bootstrap_miou_ci(
     seed: int = BOOTSTRAP_SEED,
     ci_level: float = CI_LEVEL,
 ) -> dict:
-    """Single-model macro-mIoU percentile CI (used by H4 on the MER split, 5.7)."""
-    inter, union = np.asarray(inter), np.asarray(union)
-    n_cls, n_img = inter.shape
-    full_union = union.sum(axis=1)
+    """Single-model macro-mIoU CI, with the V2 seed/image hierarchy when ``S > 1``."""
+    inter, union = _seeded_counts(inter, union)
+    n_seed, n_cls, n_img = inter.shape
+    full_union = union.sum(axis=(0, 2))
     class_set = [c for c in range(n_cls) if full_union[c] > 0]
     if not class_set or n_img == 0:
         raise ValueError("cannot bootstrap an empty split/class set")
     rng = np.random.default_rng(seed)
     vals = np.empty(n_resamples)
     for b in range(n_resamples):
-        idx = rng.integers(0, n_img, size=n_img)
-        vals[b] = _macro(inter[:, idx].sum(axis=1), union[:, idx].sum(axis=1), class_set)
+        sampled_seeds = (
+            np.array([0], dtype=np.int64) if n_seed == 1 else rng.integers(0, n_seed, size=n_seed)
+        )
+        seed_vals = []
+        for sampled_seed in sampled_seeds:
+            idx = rng.integers(0, n_img, size=n_img)
+            seed_vals.append(
+                _macro(
+                    inter[sampled_seed, :, idx].sum(axis=0),
+                    union[sampled_seed, :, idx].sum(axis=0),
+                    class_set,
+                )
+            )
+        vals[b] = float(np.mean(seed_vals))
     lo_q, hi_q = 100 * (1 - ci_level) / 2, 100 * (1 + ci_level) / 2
+    observed = [
+        _macro(inter[s].sum(axis=1), union[s].sum(axis=1), class_set) for s in range(n_seed)
+    ]
     return {
-        "miou": _macro(inter.sum(axis=1), union.sum(axis=1), class_set),
+        "miou": float(np.mean(observed)),
         "ci_low": float(np.percentile(vals, lo_q)),
         "ci_high": float(np.percentile(vals, hi_q)),
         "n_images": n_img,
+        "n_seeds": n_seed,
     }
 
 
@@ -174,16 +221,19 @@ def h4_rule(
     boot = bootstrap_miou_ci(
         mer_inter, mer_union, n_resamples=n_resamples, seed=seed, ci_level=ci_level
     )
-    drop = float(miou_in_rover) - boot["miou"]
-    support = (drop < drop_threshold) and (boot["ci_low"] > float(baseline_on_mer_miou))
+    in_rover = float(np.mean(np.asarray(miou_in_rover, dtype=float)))
+    baseline_mer = float(np.mean(np.asarray(baseline_on_mer_miou, dtype=float)))
+    drop = in_rover - boot["miou"]
+    support = (drop < drop_threshold) and (boot["ci_low"] > baseline_mer)
     return {
-        "miou_in_rover": float(miou_in_rover),
+        "miou_in_rover": in_rover,
         "miou_cross_rover": boot["miou"],
         "drop": drop,
         "drop_threshold": drop_threshold,
         "cross_rover_ci_low": boot["ci_low"],
         "cross_rover_ci_high": boot["ci_high"],
-        "baseline_on_mer_miou": float(baseline_on_mer_miou),
+        "baseline_on_mer_miou": baseline_mer,
+        "n_seeds": boot["n_seeds"],
         "decision": "support" if support else "reject",
     }
 

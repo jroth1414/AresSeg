@@ -7,7 +7,7 @@ terrain — *soil, bedrock, sand, big rock* — from rover camera images, the co
 **autonomous drivability** assessment. We compare CNN (U-Net, DeepLabV3+) vs transformer (SegFormer)
 architectures, measure the value of **ImageNet transfer**, test **cross-rover generalization**
 (Curiosity → Opportunity/Spirit), and benchmark a **foundation-model reference** (DINOv3 pretrained on
-Earth satellite imagery + SAM zero-shot), all under a leakage-safe, pre-registered,
+Earth satellite imagery + a SAM region-oracle upper bound), all under a pre-registered,
 significance-tested protocol.
 
 ---
@@ -19,60 +19,18 @@ conversation context**, given only this file + the repo, must reach the **same r
 H0–H5 verdicts** as any other agent. Every load-bearing constant is pinned below. Do not invent
 versions, paths, thresholds, or file names.
 
-**ONE-LINE STATUS (2026-07-03): MS0–MS3 are DONE (53 pytest tests green, ruff+black clean;
-`analyze_results.py` writes verdicts.json with every H0–H5 decided — all `deferred` pending GPU
-runs; the MS2-C/MS4 CPU smoke is green and contract-valid; `experiments/PREREG.md` is SEALED —
-sha256 recorded — including the SAM region-oracle scoring rule). RESUME POINT → MS4: build
-`scripts/run_gpu.sh` (§2), run the V100 training sweep + H4 cross-rover evals + H5 foundation
-arms, merge back via `merge_results.py`, re-run `analyze_results.py`; then MS5 (paper).**
+**STATUS (2026-07-10).** The data, model, training, metrics, and analysis implementation exists,
+including a historical CPU smoke artifact. The protocol now uses a constant-majority H1/H4
+reference, an explicitly named learned Tiny U-Net H5 reference, three learned-model training seeds,
+a two-level seed/image bootstrap, and one Holm family for H3 overall plus per-class tests. The
+original `experiments/PREREG.md` remains intact; the dated Protocol V2 amendment and executable
+snapshot verifier close the prose/code binding gap.
 
-> **✅ RESOLVED (2026-07-01, branch `phase-ms1-fix`).** The two MS1 defects that blocked all training
-> are **fixed and re-verified against the on-disk dataset**:
-> 1. `build_index` is now camera-aware and ncam-scoped (§4.1): MSL ncam train=16064, test=322 (pinned
->    **min3** by path, not sort order), MER train=[], test=204 — asserted by real-layout tests in
->    `tests/test_data.py` (they skip when the dataset is absent so CI stays offline-green).
-> 2. Every record carries the canonical camera-qualified `name` join key (§4.3: `msl_ncam_…`,
->    `mer_test_…`; unique, non-empty, sorted for cross-platform determinism), and
->    `SegDataset.__getitem__` returns `rec["name"]` — a missing name is a hard `KeyError`, never a
->    positional fallback.
->
-> Training remains gated only on MS3 (`configs/*`, `eval/*`, `run_experiment.py`) being built.
-
-- **Branches.** `main` is the **canonical branch** and contains everything through this hardened plan
-  (MS0–MS2 code + the DEVPLAN); `ms2-models` is kept as a mirror at the same commit. **A fresh checkout
-  of `main` matches this plan — no branch switch is needed.** Every commit is authored by **John Roth**
-  only (no AI co-authors). Branch new phase work off `main` (e.g. `phase-ms3-eval`).
-  `project/ntl-sector-etf-forecasting` is an unrelated archived project — ignore it.
-- **DONE (do NOT rebuild):**
-  - `src/marsseg/utils/*` (seed, config, manifest, results, tracking, logging, capabilities)
-  - `src/marsseg/data/{ai4mars,dataset,transforms}.py` — **§4.1 + §4.3 fixes APPLIED 2026-07-01**
-    (camera-aware ncam-scoped `build_index`, `label_key` stem normalizer, pinned min3 gold dir,
-    camera-qualified `name` join key; `SegDataset` returns `rec["name"]`, no fallback).
-  - `src/marsseg/models/zoo.py` (baseline / unet / deeplabv3plus / segformer)
-  - `src/marsseg/train/{loss,lit}.py` (PyTorch Lightning)
-  - `scripts/{check_env,download_data}.py`
-  - `tests/{test_smoke,test_data,test_models}.py` — **27 tests pass**, including real-layout count
-    asserts (16064/322/204, min3-by-path, unique camera-qualified names) that run on this box and
-    skip offline, plus regression fixtures for the two §4.1 bugs (camera decoy, MER pools/stems)
-    and the min1-vs-min3 discriminator.
-  - `.git/hooks/commit-msg`, `.gitignore`, `requirements*.txt`, `.env.example`, `pyproject.toml`
-  - AI4Mars dataset already downloaded and extracted locally (see §4).
-- **MS2 tail DONE 2026-07-02:** `src/marsseg/models/foundation.py` — DINOv3-SAT frozen ViT-L/16
-  backbone + trainable conv head; SAM ViT-B zero-shot generator; skip-and-log gating covers the
-  pre-load gates AND load-path failures (pending HF approval / bad token scope / corrupt ckpt →
-  logged skip, never a crash); routed through `zoo.build_model`, which gained an optional
-  `sam_checkpoint` kwarg so config key `model.sam_checkpoint` (§6) reaches the arm.
-- **MS3 DONE 2026-07-03:** `configs/{data,hypotheses}.yaml` + 11 model configs (incl. the H5 arms);
-  `src/marsseg/eval/{metrics,stats,aggregate,verdict,prereg,plots}.py` (the §5.6 bootstrap, §5.7 H4
-  rule, Holm, §5.9 canonical-run selection, PREREG seal);
-  `scripts/{run_experiment,analyze_results,merge_results}.py`; `experiments/PREREG.md` sealed;
-  CPU smoke run committed under `experiments/manifests/`.
-- **run_gpu.sh BUILT 2026-07-03** (bash-only turnkey; `bash scripts/run_gpu.sh` on the V100 runs
-  §2 steps 1–9 end-to-end: env + cu121 torch + extras, weight pre-cache, SAM ckpt fetch,
-  `profile=gpu_full` gate, 9 training arms with resume markers, manifest-driven H4 subject+baseline
-  `--eval-only --h4` evals, gated H5 arms, analyze + timestamped store export with merge-back
-  instructions; failures are collected and exit nonzero at the end, never mid-sweep).
-- **NOT STARTED:** the V100 execution of MS4, the paper (MS5).
+The final Protocol V2 snapshot must be sealed after runtime/model configs stabilize and before
+confirmatory analysis. The confirmatory GPU sweep and paper are not complete; H0–H5 therefore
+remain unresolved/deferred. `scripts/run_gpu.sh` is an implementation under active validation, not
+evidence that the sweep has run successfully. The authoritative current state is the repository
+plus the newest entry in `docs/DEVLOG.md`, not historical branch or machine notes.
 
 **Build trail:** append every phase's decisions/verification to **`docs/DEVLOG.md`** (newest at
 bottom). Update §0 here and README §Status at the end of each phase.
@@ -81,129 +39,69 @@ bottom). Update §0 here and README §Status at the end of each phase.
 
 ## 1. Operating rules (NON-NEGOTIABLE — read before your first commit)
 
-1. **NO AI author or co-author anywhere** — commits, code comments, docs, or the paper. Never add
-   `Co-Authored-By:`, `Generated with`, or any Claude/Anthropic attribution. A
-   `.git/hooks/commit-msg` hook auto-strips any `Co-?Authored-?By: …(Claude|Anthropic)` trailer — do
-   **not** re-add them and do not fight the hook. Author identity for all commits is
-   **John Roth <jrothecuador@gmail.com>**; do not change `git config user.*`.
-2. **RESEARCH.MD is the immutable course rubric — NEVER edit, stage, reformat, or `git add` it.** Its
-   frozen SHA-256 is:
-   ```
-   181361d246cc0f5e2cde7061ff3c4713815aad233fe61aeda4f8a0d496e84e31
-   ```
-   Re-verify unchanged at the MS5 gate (`sha256sum RESEARCH.MD` must equal the value above).
+1. **Authorship policy.** Do not add automated co-author trailers. The tracked
+   `.pre-commit-config.yaml` installs a `commit-msg` check that rejects prohibited trailers; cloned
+   repositories do not inherit `.git/hooks`. Install it with `pre-commit install --install-hooks`.
+2. **RESEARCH.MD is the immutable course rubric — never edit or reformat it.**
+   `RESEARCH.MD.sha256` is the sole checksum source. Run `python scripts/check_integrity.py`; do not
+   copy the digest into other documents.
 3. **`.env` is gitignored and NEVER committed.** Secrets (only `HF_TOKEN`, for gated DINOv3) live
-   **only** in `.env`. Code reads them via `marsseg.utils.config.require_secret(name)`, which raises
-   an actionable error if missing/empty. Only `.env.example` is committed. (Note: the live `.env`
-   currently holds stale `EARTHDATA_TOKEN`/`FRED_API_KEY` from a prior project — purge these and add
-   `HF_TOKEN` when doing H5; see §3.)
+   **only** in `.env`. Only `.env.example` is committed. Never document or infer the contents of a
+   developer's live environment file.
 4. **`experiments/` and `data/` are gitignored.** The ONLY experiment files that may be committed:
    `experiments/results_store.parquet`, `experiments/results_store.csv`,
-   `experiments/**/manifest.json`, `experiments/PREREG.md`, `experiments/manifests/**`, and
+   `experiments/**/manifest.json`, `experiments/PREREG*.md`, `experiments/manifests/**`, and
    `.gitkeep`. `data/` keeps only its skeleton via `.gitkeep`. **Never `git add -f`** a checkpoint
    (`*.pt` / `*.pth` / `*.ckpt` / `*.safetensors`), raw data, or predicted-mask PNGs.
-5. **Seed = 1414 for splits + training; the evaluation bootstrap uses purpose-seed 0.** Call
-   `marsseg.utils.seed.set_seed(1414)` at the top of every entry point (it sets Python/NumPy/torch
-   seeds + `cudnn.deterministic=True`, `benchmark=False`, `CUBLAS_WORKSPACE_CONFIG=:4096:8`,
-   `torch.use_deterministic_algorithms(warn_only=True)`). The bootstrap in `eval/stats.py` uses
-   `marsseg.utils.seed.BOOTSTRAP_SEED = 0` — **not** 1414. `SEED_SET=[1414,1415,1416,1417,1418]` is an
-   OPTIONAL multi-seed robustness appendix, not the reported number.
-6. **Work task-by-task.** One local commit per task; the message is **prefixed with the phase/task ID**
-   (e.g. `MS3: add eval/metrics.py`). One **branch per phase**, branched off `main`
-   (e.g. `phase-ms3-eval`). **Push to origin regularly — after every task-commit or so** (user
-   directive 2026-07-02, superseding the earlier local-only rule). **PAUSE at every phase gate for
-   user review** before starting the next phase.
-7. **The local RTX 5070 Ti (Blackwell) is intentionally UNUSED for training.** Do not target it. CPU
-   is for the full pipeline + smoke; full training runs on the incoming **V100 (16 GB, Ubuntu)**.
+5. **Seed policy.** Split seed is 1414. Learned confirmatory arms require training seeds
+   `[1414, 1415, 1416]`; deterministic majority/SAM artifacts are computed once and paired against
+   each learned seed. Bootstrap purpose-seed is 0.
+6. **Work task-by-task.** Preserve user changes, record verification evidence, and pause when a
+   change would require new authority.
+7. **Compute is capability-driven.** CPU is for smoke/offline tests; full training requires a CUDA
+   device that passes `scripts/check_env.py`. Record the detected GPU and memory in each manifest;
+   do not encode an assumed machine size into the protocol.
 
 ---
 
 ## 2. Environment & setup
 
-**Interpreter (pinned).** Base Python **3.11** (pyproject requires `>=3.11,<3.12`):
-`C:/Users/Admin/AppData/Local/Programs/Python/Python311/python.exe`. Venv at **`.venv`** (gitignored).
+Use Python **3.11** (`pyproject.toml` requires `>=3.11,<3.12`) and a local `.venv`. Installation is
+profile-first, third-party lock second, checked-out source last.
 
-- **Windows/CPU interpreter:** `.venv/Scripts/python.exe`
-- **V100/Ubuntu interpreter:** `.venv/bin/python`
+**CPU:**
 
-**Setup (Windows / CPU — the dev + smoke profile), from repo root, IN ORDER:**
-```powershell
-# STEP 0: `main` is the canonical branch and already matches this plan (no switch needed).
-# If you are on another branch after cloning, check out main first.
-git checkout main
-
-C:/Users/Admin/AppData/Local/Programs/Python/Python311/python.exe -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -U pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt   # CPU torch, smp, lightning, transformers, albumentations
-.\.venv\Scripts\python.exe -m pip install -e .                  # editable install of src/marsseg — REQUIRED before ANY import
-.\.venv\Scripts\python.exe scripts/check_env.py                 # MUST end with `core OK` (exit 0)
+```bash
+python3.11 -m venv .venv
+.venv/bin/python -m pip install --no-deps -r requirements-cpu.lock.txt
+.venv/bin/python -m pip install -r requirements.lock.txt
+.venv/bin/python -m pip install --no-deps --no-build-isolation -e .
+.venv/bin/python scripts/check_integrity.py
+.venv/bin/python scripts/check_env.py
 ```
-The editable install (`pip install -e .`) is **required**: the package lives under `src/` and every
-import (`from marsseg…`) and `scripts/check_env.py` assume `marsseg` is importable.
 
-**Expected `check_env.py` output (Windows/CPU):**
+**CUDA 12.1:**
+
+```bash
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements-cuda121.lock.txt
+.venv/bin/python -m pip install -r requirements.lock.txt
+.venv/bin/python -m pip install -r requirements-extras.lock.txt
+.venv/bin/python -m pip install --no-deps --no-build-isolation -e .
+.venv/bin/python scripts/check_integrity.py
+.venv/bin/python scripts/check_env.py
 ```
-profile=windows_cpu
-cuda=False gpu=None
-smp=True transformers=True sam=... timm=...
---- core package versions ---
-  numpy: ...
-  ... (all core modules present, none MISSING) ...
-core OK
-```
-**The gate is exactly one thing: the last stdout line is `core OK` and exit code is 0.** Nothing else
-is asserted. `sam`/`timm` may be `False` on CPU — the core smoke **excludes** gated foundation packages
-(`segment-anything`), so their absence never fails the gate.
 
-**Package versions FLOAT — do not treat any specific minor version as frozen.** `requirements.txt` uses
-lower bounds with loose upper bounds (`transformers>=4.40` with no cap; `numpy>=1.26,<2.1`;
-`torch>=2.2,<2.5`; `torchvision>=0.17,<0.20`; `segmentation-models-pytorch>=0.3.3`; `torchmetrics>=1.3`),
-so a fresh `pip install` may resolve e.g. `numpy 2.0.2`, `transformers 5.x`, `torch 2.4.1+cpu`. This is
-fine: verdicts do not depend on minor versions. For **byte-exact** reproduction use
-**`requirements.lock.txt`** (the frozen full env). **The lockfile is UTF-16-encoded** — read it with
-`encoding="utf-16"`, not utf-8. (Observed-good on this box: `torch 2.4.1+cpu`, `torchvision
-0.19.1+cpu`, `segmentation-models-pytorch 0.5.0`, `cuda=False`, `profile=windows_cpu` — illustrative,
-not a gate.)
+CUDA profile installation deliberately uses dependencies: the pinned PyTorch wheel metadata pins
+its Linux `nvidia-*` and Triton requirements. CPU profile installation may use `--no-deps` because
+the portable main lock supplies dependencies next. On Windows, replace `.venv/bin` with
+`.venv\\Scripts`. `requirements.lock.txt` is UTF-8 and third-party-only; never install the project
+from a Git URL inside that lock.
 
-**CPU-vs-V100 profile split.** `marsseg.utils.capabilities.detect().profile` returns
-`"gpu_full"` if `torch.cuda.is_available()` else `"windows_cpu"`. All run scripts branch on this:
-- `windows_cpu` → **smoke path only** (subset of images via `data.max_train_images`, `train.max_epochs=1`,
-  limited batches); GPU-only arms are recorded `status="skipped"` (never crash) and appended to
-  `manifest.gpu_stages_skipped`.
-- `gpu_full` → **full training** (`max_epochs=50`, AMP `precision="16-mixed"`).
-
-**GPU handoff (V100 / Ubuntu) — `scripts/run_gpu.sh` (BUILT 2026-07-03).** It is a **bash** script (NOT
-PowerShell) that MUST:
-1. `git checkout main` (or the merged phase branch) first, then `python3.11 -m venv .venv`.
-2. `.venv/bin/python -m pip install -r requirements.txt`, then **reinstall a CUDA torch build**
-   because `requirements.txt` resolves to the CPU wheel:
-   `.venv/bin/python -m pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu121`.
-3. `.venv/bin/python -m pip install -r requirements-extras.txt` (segment-anything, timm — foundation).
-4. `.venv/bin/python -m pip install -e .`.
-5. **Pre-cache ImageNet encoder weights** (see network precondition below): the smp `resnet34`/`resnet50`
-   ImageNet encoders and the SegFormer ADE checkpoints are fetched from the network on first use. Warm
-   the cache here (e.g. `python -c "import segmentation_models_pytorch as smp; smp.Unet('resnet34',
-   encoder_weights='imagenet'); smp.DeepLabV3Plus('resnet50', encoder_weights='imagenet')"` and the
-   transformers SegFormer load) while the box has network, so training arms don't fail offline later.
-6. Download the SAM ViT-B checkpoint (§6) into `data/weights/sam/`.
-7. `.venv/bin/python scripts/check_env.py` and assert `profile=gpu_full` (cuda True) before training.
-8. Run each `configs/models/*.yaml` and the cross-rover (H4) + foundation (H5) arms via
-   `scripts/run_experiment.py`.
-9. `.venv/bin/python scripts/merge_results.py …` to dedup GPU rows into
-   `experiments/results_store.parquet` on `DEDUP_KEYS` (§7).
-Extras are installed **only** on the V100 profile.
-
-**Network precondition for pretrained arms.** `build_model('unet'|'deeplabv3plus', pretrained=True)`
-and `build_model('segformer', pretrained=True)` **download weights from the internet on first use**
-(smp ImageNet encoders; `nvidia/segformer-*-finetuned-ade-512-512` via `transformers`). The
-**scratch** arms (`pretrained=False`) need no network. On an **offline/air-gapped V100**, the pretrained
-arms fail unless the encoder-weights cache (`~/.cache/torch/hub`, `~/.cache/huggingface`) is
-pre-populated — hence step 5 above. Record in the run manifest whether weights came from cache or
-network.
-
-**Gated DINOv3 (H5).** See §3 for the token + license steps. DINOv3 itself needs **no extra pip**
-(loads via `transformers`, already core); it needs `HF_TOKEN` + license acceptance. SAM needs the
-extras install **and** a downloaded ViT-B checkpoint (§6).
+Pretrained arms require their upstream weights/cache. DINOv3 additionally requires accepted gated
+access and `HF_TOKEN`; SAM requires its separately downloaded checkpoint. Record resolved model
+revisions, checkpoint hashes, package versions, GPU identity, and training metrics in each run.
+See `docs/REPRODUCIBILITY.md` for the concise profile guide.
 
 ---
 
@@ -225,35 +123,32 @@ cross-entropy + Dice on valid pixels; primary metric = **mean IoU (mIoU)**.
 > **The primary protocol is ncam-only for MSL.** `mcam` (color, train-only, no gold test) is
 > **excluded** from all reported numbers. This is a deliberate scope decision, not an oversight.
 
-Hypotheses are frozen in **`configs/hypotheses.yaml`** (owner: `eval/`; TO BUILD, MS3 — see §5 for the
-exact schema) and pre-registered in **`experiments/PREREG.md`** (frozen BEFORE any test-set number is
-computed). **Significance threshold: α = 0.10; Holm correction applied within each family.** The
-paired-bootstrap statistic, pairing, p-value estimator, and fixed-class-set rules are defined **once**
-in §5.6 and are the single source of truth for every hypothesis below.
+Hypotheses and executable selectors live in **`configs/hypotheses.yaml`**. The historical
+`experiments/PREREG.md` is preserved and the dated V2 amendment documents pre-confirmatory
+corrections. **Significance threshold: α = 0.10; Holm correction is applied within each configured
+family.** The executable config and sealed Protocol V2 snapshot take precedence over duplicated
+historical prose.
 
 | ID | Statement | Family | Test | Exact decision rule |
 |---|---|---|---|---|
-| **H0** | No deep model significantly beats the baseline at mIoU. | — | — | Reported **honestly**: H0 holds iff H1 is NOT rejected. H0 is never "tested" as its own comparison. |
-| **H1** | ≥1 deep model (U-Net / DeepLab / SegFormer, best pretrained variant) beats `baseline` on mIoU. | A | paired_bootstrap, one-sided (`greater`), §5.6 | **Reject H0 (support H1)** iff Holm-adjusted p < 0.10 for ≥1 Family-A member (Δ = mIoU_candidate − mIoU_baseline > 0). |
-| **H2** | ImageNet-pretrained encoder > identical from-scratch. | B | paired_bootstrap, one-sided (`greater`), §5.6 | **Support** iff Holm-adjusted p < 0.10 for ≥1 Family-B member (Δ = mIoU_pretrained − mIoU_scratch > 0). |
-| **H3** | SegFormer (transformer) vs U-Net/DeepLab (CNN) — which wins overall **and per class** (hypothesis: transformer favors large homogeneous soil/sand; CNN favors small `big_rock` boundaries). | C | paired_bootstrap, **two-sided**, overall + per-class strata, §5.6 | Delta orientation is **`segformer − cnn`** everywhere. **Support a direction** for a member iff Holm-adjusted p < 0.10; the reported direction is `sign(observed Δ)`. Report per-class (scope∈{soil,bedrock,sand,big_rock}) IoU deltas separately using the same fixed-class + resample rules (§5.6). |
-| **H4** | A model generalizes across rovers: train MSL (Curiosity ncam), test MER (Opportunity/Spirit) with a **bounded mIoU drop**. | D | bootstrap on MER-test images, §5.6 + §5.7 | **Deterministic rule, no p-value** (single-member family ⇒ Holm is a no-op). **Generalizes (support)** iff **both**: (1) point-estimate `drop = mIoU(subject, MSL ncam test) − mIoU(subject, MER test) < 0.15`, AND (2) `cross_rover_ci_low > baseline_on_MER_miou` (point estimate). See §5.7 for the exact mechanics. |
-| **H5** | Foundation reference: DINOv3 ViT-L/16 SAT-493M frozen backbone + trained head; SAM zero-shot. | E | paired_bootstrap vs baseline (§5.6); gated | Decided on `gpu_full`. On `windows_cpu`/missing weights → verdict = **DEFERRED (gated, awaiting gpu_full)**; MUST NOT block H1–H4. On gpu_full: per-member Holm within Family E; **see §5.8 for the partial-GPU (mixed ok/skipped) rule.** |
+| **H0** | No tested deep system significantly beats constant-majority at mIoU. | — | — | Reject iff H1 is supported; otherwise report `fail_to_reject`, never support for H0. |
+| **H1** | At least one tested deep system beats `majority`. | A | paired seed/image bootstrap, one-sided | Reject H0 iff at least one Family-A adjusted p < 0.10 with positive delta. |
+| **H2** | Pretrained initialization helps at least one tested architecture. | B | paired seed/image bootstrap, one-sided | Support only this bounded claim iff at least one Family-B adjusted p < 0.10 with positive delta; do not generalize to all transfer learning. |
+| **H3** | Configured SegFormer MiT-B2 systems differ from U-Net/ResNet-34 or DeepLabV3+/ResNet-50 overall or by class. | C | paired seed/image bootstrap, two-sided | One Holm family contains both overall and every emitted fixed-set per-class test. Report signed configured-system effects and parameter counts; do not claim an architecture-only causal effect. |
+| **H4** | The validation-selected conventional system has bounded Curiosity→MER degradation. | D | threshold plus hierarchical MER CI | Support iff mean drop < 0.15 and MER CI low exceeds `majority` on MER; no p-value. |
+| **H5** | DINOv3-SAT and the SAM region-oracle upper bound are useful learned-reference comparisons. | E | paired seed/image bootstrap vs `tiny_unet`; gated | Holm over completed members; incomplete learned seed sets defer. SAM is not deployable zero-shot semantic segmentation. |
 
 **H5 gated-weights steps (do only when running H5):**
 1. Visit `https://huggingface.co/facebook/dinov3-vitl16-pretrain-sat493m` while logged in and
-   **accept the license**. Only the **ViT-L/16 SAT-493M** variant fits the 16 GB V100 (ViT-7B does not).
+   **accept the license**. The configured arm is ViT-L/16 SAT-493M; memory feasibility must be
+   established by the GPU preflight rather than assumed from a machine label.
 2. Create an HF **read** token.
 3. Put it in `.env` as `HF_TOKEN=…` (gitignored, never committed).
 4. Code reads it via `config.require_secret("HF_TOKEN")` **only on the load path** — but
    `foundation.py` must FIRST check `os.environ.get("HF_TOKEN")` and, if absent (or cuda absent, or
    SAM checkpoint absent), **skip-and-log** (append a `status="skipped"` results row, record in
    `manifest.gpu_stages_skipped`, return) rather than raise. Never hard-crash the pipeline on CPU.
-5. **MS0 fix task — DONE 2026-07-01:** `.env.example` rewritten (no false "NO credentials required"
-   framing; `HF_TOKEN` marked **required-for-H5** with the license-acceptance URL); stale
-   `EARTHDATA_TOKEN`/`FRED_API_KEY` purged from the live `.env` (now holds an empty `HF_TOKEN`
-   placeholder). The stale **DINOv2→DINOv3** naming in `.env.example`, `README.md`,
-   `requirements.txt`, `capabilities.py`, and the proposal was also corrected.
+5. Never inspect, publish, or make claims about the contents of a developer's live `.env`.
 
 ---
 
@@ -412,20 +307,22 @@ Lightning's `Trainer` provides the loop/AMP/DDP/checkpoint/early-stop. `run_expe
 
 | `model` id | class / lib | default backbone | pretrained source | params |
 |---|---|---|---|---|
-| `baseline` | `TinyUNet` (from scratch, `base=16`) | — (`none`) | never (H0/H1 yardstick) | ~117 k |
+| `majority` | parameter-free constant class 0 (soil) | — (`none`) | never (H0/H1 and H4 reference) | 0 |
+| `tiny_unet` (`baseline` legacy alias) | `TinyUNet` (from scratch, `base=16`) | — (`none`) | never (learned H5 reference) | ~117 k |
 | `unet` | smp `Unet` | `resnet34` | `encoder_weights="imagenet"` if pretrained (network on first use) | 24.4 M |
 | `deeplabv3plus` | smp `DeepLabV3Plus` | `resnet50` | `encoder_weights="imagenet"` if pretrained (network on first use) | 26.7 M |
-| `segformer` | `transformers` MiT (`_SegFormer`) | `"b0"` \| `"b2"` | pretrained loads `nvidia/segformer-{b}-finetuned-ade-512-512` (network), upsamples logits to input res | b0: 3.7 M |
+| `segformer` | `transformers` MiT (`_SegFormer`) | `"b0"` \| `"b2"` | pretrained loads only `nvidia/mit-{b}` ImageNet encoder; task head is new | report from manifest |
 
 `pretrained=False` builds the scratch variant (random init) for H2 and needs **no network**. See §2
 "Network precondition" for the pretrained arms. Foundation models (`dinov3_sat`, `sam`) live in
-`models/foundation.py` (TO BUILD).
+`models/foundation.py`.
 
 **Backbone naming contract (results-store label).** `build_model` takes SegFormer backbone as `"b0"`/`"b2"`,
 but the results-store `backbone` column uses **`mit-b0`/`mit-b2`**. Each `configs/models/*.yaml` carries
 both `model.backbone` (the zoo build arg, e.g. `b0`) and `model.results_backbone` (the store label,
 e.g. `mit-b0`); `run_experiment.py` writes `results_backbone` into the store. For smp models
-`backbone == results_backbone` (`resnet34`, `resnet50`, `efficientnet-b0`); for `baseline`, `backbone=none`.
+`backbone == results_backbone` (`resnet34`, `resnet50`, `efficientnet-b0`); for `majority` and
+`tiny_unet`, `backbone=none`.
 
 ### 5.2 Lightning module (`train/lit.py`, BUILT) — frozen hyperparameters
 
@@ -436,8 +333,8 @@ e.g. `mit-b0`); `run_experiment.py` writes `results_backbone` into the store. Fo
 - Metrics: `torchmetrics.MulticlassJaccardIndex(ignore_index=255)`, per-class + macro; logs
   `train_loss`, `val_loss`, `val_miou`, `val_iou_{class}`.
 
-`SegDataModule` (BUILT): `SegDataModule(train_records, val_records, test_records=None, batch_size=8,
-num_workers=0, size=512)` — wraps `SegDataset`, deterministic loaders (`torch.Generator().manual_seed(1414)`).
+`SegDataModule` wraps `SegDataset`; batch size, workers, augmentation, and seed come from the merged
+run config. DataLoader generators and workers are seeded from the run seed.
 
 ### 5.3 Loss (`train/loss.py`, BUILT)
 
@@ -453,7 +350,7 @@ dice_weight * DiceLoss(ignore_index=255)`, both over **valid pixels only** (255 
 | Split | **by image**, `val_frac=0.2`, `split_seed=1414` | `make_splits(val_frac=0.2, seed=1414)` |
 | Test set (MSL) | **`msl/ncam/labels/test/masked-gold-min3-100agree`** expert gold; assert `len(index["test"]) == 322` | `configs/data.yaml: data.test_gold_dir` |
 | Test set (MER, H4) | **`mer/labels/test/masked-gold-min3-100agree`**; assert `len(index["test"]) == 204`; images from `mer/images/{eff,test}` | `configs/data.yaml: mer.test_gold_dir` |
-| Gold-dir selection code fix | Current `build_index` hard-picks `sorted(glob("masked-gold-*"))[0]` = **min1** (comment: "most permissive"). The pinned protocol is **min3**. The 322/204 counts are **identical across min1/min2/min3**, so a green 322 does **NOT** prove min3 is in use — it is coincidental. **MS1 fix: `build_index` MUST honor `test_gold_dir` (min3), not `[0]`.** Record the resolved gold dir + count in `manifest.extra.resolved_test_gold_dir`. | `build_index` / `configs/data.yaml` |
+| Gold-dir integrity | `build_index` honors the explicit min3 paths; `scripts/check_data.py` verifies counts, pairing, split disjointness, masks, and fingerprints before a run. | `build_index` / `configs/data.yaml` / `check_data.py` |
 | Epochs | `max_epochs=50` (= cosine `T_max`) | `SegLitModule` / `configs/models/*.yaml: train.max_epochs` |
 | Early stop | `EarlyStopping(monitor="val_miou", mode="max", patience=10, min_delta=0.001)` | `run_experiment.py` callback |
 | Checkpoint | `ModelCheckpoint(monitor="val_miou", mode="max", save_top_k=1)`; **evaluate the BEST ckpt** (not last) | `run_experiment.py` callback |
@@ -461,17 +358,17 @@ dice_weight * DiceLoss(ignore_index=255)`, both over **valid pixels only** (255 
 | Precision | `"16-mixed"` on `gpu_full`, `"32-true"` on `windows_cpu` (affects speed only, not the verdict) | `run_experiment.py` |
 | LR / opt / sched | `AdamW(3e-4, wd=1e-4)` + `CosineAnnealingLR(T_max=50)` | `train/lit.py` (frozen) |
 | Class weights | **`w_c = median(counts)/counts_c`, clipped to `[0.5, 10.0]`**, computed on the **train split only** (post-`make_splits`, never val/test), `max_images=null` (full scan); record the 4-vector in `manifest.extra.class_weights` | `configs/data.yaml: class_weights` |
-| Augmentation | train: `Resize(512)` + `HorizontalFlip(p=0.5)` + `RandomBrightnessContrast(0.2,0.2,p=0.3)`; eval: `Resize(512)`. **NO vertical flip, NO scale/crop.** `Normalize(mean=(0.485,0.456,0.406), std=(0.229,0.224,0.225))` | `data/transforms.py` (frozen) |
-| Batch size | **8** | `SegDataModule(batch_size=8)` |
+| Augmentation | Values are read from `configs/data.yaml: aug`; train/eval both resize and normalize consistently. | `data/transforms.py` / `configs/data.yaml` |
+| Batch size | Per-model config; gradient accumulation may preserve effective batch size after GPU preflight. | `configs/models/*.yaml` |
 | CPU-smoke subset | `data.max_train_images` (int or null) — **consumed by `run_experiment.py`**, which truncates `train_records` to the first N **after** `make_splits` and **before** building the DataModule (see §8), and ALSO caps `val_records` to the same N (recorded as `manifest.val_truncated_to`) so the smoke validation pass is tractable on CPU. `null` = full data, train AND val untouched (GPU runs unaffected). WIRED (MS3). | `configs/data.yaml` / `run_experiment.py` |
-| Bootstrap | `n_resamples=10000`, `seed=BOOTSTRAP_SEED=0`, unit = **image**, resample WITH replacement, recompute split-level metric from **summed inter/union counts**; CI = **percentile**, `ci_level=0.90`. **Full mechanics: §5.6.** | `eval/stats.py` / `configs/hypotheses.yaml: stats` |
+| Bootstrap | `n_resamples=10000`, purpose-seed 0; sample training seeds then paired images within sampled seed; recompute metrics from sufficient counts; 90% percentile CI. | `eval/stats.py` / `configs/hypotheses.yaml` |
 | McNemar | unit = pixel, valid pixels only (`mask!=255`), Edwards continuity `(|b−c|−1)²/(b+c)`; **secondary/descriptive only — never overrides the image-level bootstrap verdict** | `eval/stats.py` |
 | H4 mechanics | **§5.7** (single procedure, no p-value) | `configs/hypotheses.yaml: H4` |
-| Foundation gating on CPU | `windows_cpu` OR `caps.sam False` OR `HF_TOKEN` missing OR SAM ckpt absent → append `status="skipped"`, `value=None` rows for `{dinov3_sat, finetuned}` and `{sam, zeroshot}`; set `manifest.gpu_stages_skipped`; never raise. **Partial-GPU rule: §5.8.** | `models/foundation.py` / `run_experiment.py` |
+| Foundation gating on CPU | Missing CUDA/token/checkpoint/dependency produces explicit skipped/deferred artifacts. SAM output variant is `region_oracle_upper_bound`. | `models/foundation.py` / `run_experiment.py` |
 | Descriptive-only metrics | `boundary_f1` and `pixel_acc` are **leaderboard/reporting only**; **NO hypothesis is tested on them.** All bootstraps operate solely on `iou`-derived macro-mIoU (H1/H2/H4) and per-class `iou` (H3). | §5.6 / §6 / §7.4 |
-| Seed policy | training/splits = **1414** (single-seed primary leaderboard); bootstrap = **0**; multi-seed `[1414..1418]` optional appendix | `utils/seed.py` |
+| Seed policy | split seed 1414; learned primary seeds `[1414,1415,1416]`; deterministic majority/SAM artifact seed 1414; bootstrap seed 0 | `configs/hypotheses.yaml` / `utils/seed.py` |
 
-### 5.5 `configs/` schema (TO BUILD, MS3 — none exist yet)
+### 5.5 `configs/` schema (implemented)
 
 Loaded via `utils.config.load_config(yaml_path, overrides, base_paths)` with dotted `key=value`
 overrides (auto-typed; e.g. `train.lr=2e-4` → float, `data.max_train_images=64` → int).
@@ -511,7 +408,7 @@ overrides (auto-typed; e.g. `train.lr=2e-4` → float, `data.max_train_images=64
   train: {batch_size: 8, max_epochs: 50, lr: 3e-4, weight_decay: 1e-4, dice_weight: 1.0,
           ignore_index: 255, early_stop_patience: 10, grad_clip: 1.0}
   ```
-  Enumerated model configs: `baseline` (no backbone); `unet` (resnet34) {pretrained, scratch};
+  Enumerated model configs: `majority`, `tiny_unet`; `unet` (resnet34) {pretrained, scratch};
   `deeplabv3plus` (resnet50) {pretrained, scratch}; `segformer` (b0→mit-b0, b2→mit-b2)
   {pretrained, scratch}; optional `unet` (efficientnet-b0) for H2/H3.
 - **`configs/hypotheses.yaml`** (owner: `eval/`) — **every threshold/path/count below is CONCRETE (no
@@ -525,7 +422,7 @@ overrides (auto-typed; e.g. `train.lr=2e-4` → float, `data.max_train_images=64
   descriptive_only: [pixel_acc, boundary_f1]   # NEVER tested
   stats:
     n_resamples: 10000
-    resampling_unit: image
+    resampling_unit: seed_then_image
     ci_method: percentile
     bootstrap_seed: 0
     rng: numpy_default_rng          # np.random.default_rng(0); one draw advanced per replicate (§5.6)
@@ -534,30 +431,34 @@ overrides (auto-typed; e.g. `train.lr=2e-4` → float, `data.max_train_images=64
     fixed_class_set: full_split_present   # classes with union>0 over the FULL split, fixed before bootstrap
     empty_class_in_resample: iou_zero     # a fixed-set class with union==0 in a resample contributes IoU=0
     mcnemar: {unit: pixel, scope: valid_pixels_only, correction: continuity, report: secondary_only}
-  canonical_run_selection:            # how a comparison id resolves to ONE run_id (§5.9)
-    filter: {seed: 1414, profile: gpu_full, status: ok}
-    tie_break: max_manifest_timestamp_utc   # if >1 remain for a (model,backbone,variant,stratum), take newest; if still tied, raise
+  canonical_run_selection:
+    filter: {seeds: [1414, 1415, 1416], profile: gpu_full, status: ok}
+    require_complete_seed_set: true
+    deterministic_models: [majority, sam]
+    deterministic_artifact_seed: 1414
   families:
-    A: {members: [baseline_vs_unet, baseline_vs_deeplabv3plus, baseline_vs_segformer]}
+    A: {members: [majority_vs_unet, majority_vs_deeplabv3plus, majority_vs_segformer]}
     B: {members: [unet_pretrained_vs_scratch, deeplabv3plus_pretrained_vs_scratch, segformer_pretrained_vs_scratch]}
     C: {members: [segformer_vs_unet, segformer_vs_deeplabv3plus]}   # delta orientation: segformer - cnn
     D: {members: [best_in_rover_vs_cross_rover]}
-    E: {members: [dinov3_sat_vs_baseline, sam_zeroshot_vs_baseline]}
+    E: {members: [dinov3_sat_vs_tiny_unet, sam_region_oracle_vs_tiny_unet]}
   hypotheses:
     H1: {family: A, test: paired_bootstrap, statistic: delta_miou, tail: greater,
          metric: miou, decision_rule: "reject_H0 if holm_p < 0.10 for >=1 member (delta>0)"}
     H2: {family: B, test: paired_bootstrap, statistic: delta_miou, tail: greater, metric: miou,
-         decision_rule: "support if holm_p < 0.10 for >=1 member (delta>0)"}
+         decision_rule: "support only a benefit for >=1 tested architecture"}
     H3: {family: C, test: paired_bootstrap, tail: two_sided, strata: [all, per_class], metric: miou,
          delta_orientation: "segformer_minus_cnn", per_class_metric: iou,
-         decision_rule: "support a direction (sign(observed delta)) iff holm_p < 0.10 for that member"}
+         holm_scope: all_members_x_overall_and_fixed_set_classes}
     H4: {family: D, test: threshold_plus_ci, statistic: miou_drop, drop_threshold: 0.15,
-         emits_p_value: false, decision_rule: "support iff drop < 0.15 AND cross_rover_ci_low > baseline_on_MER_miou"}
+         emits_p_value: false, decision_rule: "support iff drop < 0.15 AND cross_rover_ci_low > majority_on_MER_miou"}
     H5: {family: E, gated: true, decided_on_profile: gpu_full, on_missing_gpu: deferred,
          partial_gpu_rule: "holm over ok members only; support iff >=1 ok member holm_p<0.10 (delta>0); reject if all ok fail; deferred if zero ok members"}
   ```
-  Each comparison id resolves to exactly **two concrete `run_id`s** via §5.9, then loads each run's
-  `per_image.parquet` for the paired bootstrap. H0 has no config entry — it is reported honestly from H1.
+  Executable `comparisons` selectors are intentionally not duplicated here; inspect
+  `configs/hypotheses.yaml`. Each learned side resolves to a complete three-seed run set; one
+  deterministic majority/SAM artifact is reused across paired seed strata. H0 has no comparison
+  entry and uses `fail_to_reject` when H1 is not supported.
   **The `tail: greater` / `statistic: "miou_in_rover - miou_cross_rover"` bootstrap-significance framing
   that older drafts had under H4 is DELETED** — H4 is a deterministic threshold+CI rule with no p-value
   (§5.7).
@@ -573,27 +474,26 @@ implement exactly this; two independent implementations of this spec must produc
 2. **RNG.** `rng = numpy.random.default_rng(0)` (i.e. `BOOTSTRAP_SEED=0`), **re-seeded to `default_rng(0)`
    at the start of each comparison** (`seed_reset_per_comparison: true`) so every comparison is
    deterministic and order-independent.
-3. **Per replicate (10,000 total):** draw **one** bootstrap sample of image names —
-   `idx = rng.integers(0, N, size=N)` where `N` = #images in the split (with replacement). **The SAME
-   `idx` (same name multiset) is applied to BOTH models' per-image rows** (this is what makes it
-   *paired*; never resample the two models independently).
+3. **Per replicate (10,000 total):** sample the three learned-model seeds with replacement, then
+   sample images with replacement independently within every sampled seed. Each image draw is
+   shared by both comparison sides. Deterministic majority/SAM predictions are reused for the
+   corresponding sampled learned seed.
 4. **Recompute each model's macro-mIoU on that resample from SUMMED counts:** for each class `c ∈ S`,
    `sum_inter_c = Σ_over_sampled_images inter_c`, `sum_union_c = Σ union_c` (with multiplicity). Per-class
    IoU `= sum_inter_c / sum_union_c`; if `sum_union_c == 0` in this resample, that class contributes
    **IoU = 0** (`empty_class_in_resample: iou_zero`) — the macro denominator stays `|S|`, fixed.
    `macro_mIoU = mean over S`.
-5. **Delta per replicate:** `delta_b = mIoU_candidate_b − mIoU_baseline_b` (orientation is
-   candidate−baseline for A/B/E; **segformer−cnn** for C, per §5.5).
+5. **Delta per replicate:** equal-weight mean of sampled seed-level deltas. Orientation is
+   candidate−majority for A, pretrained−scratch for B, segformer−cnn for C, and
+   foundation−tiny_unet for E.
 6. **p-value (plus-one estimator).**
    - one-sided `greater` (A/B/E): `p = (1 + #{delta_b <= 0}) / (n_resamples + 1)`.
    - two-sided (C): `p = 2 * min( (1+#{delta_b<=0}), (1+#{delta_b>=0}) ) / (n_resamples + 1)`, clipped to 1.
 7. **CI:** percentile CI of the `delta_b` distribution at `ci_level=0.90` → `[5th, 95th]` percentiles.
    (The reported point `delta` is the observed split-level delta, not the bootstrap mean.)
-8. **Per-class strata (H3):** identical procedure with `metric=iou` on a single class `c`; **reuse the
-   SAME resample indices `idx` per replicate as the overall run** (draw once per replicate, reuse across
-   the overall + per-class statistics of that comparison) so strata are mutually consistent.
-9. **Holm within family:** collect each family's member p-values, apply Holm at α=0.10, compare
-   `holm_p < 0.10`.
+8. **Per-class strata (H3):** reuse the same seed/image draws as the overall statistic.
+9. **Holm within family:** Family C contains both overall tests and all emitted fixed-set per-class
+   tests; adjusted p-values and decisions are exposed at every scope.
 
 ### 5.7 H4 mechanics (single procedure — no p-value)
 
@@ -605,14 +505,13 @@ implement exactly this; two independent implementations of this spec must produc
 - Bootstrap the **MER-test images only** (`default_rng(0)`, n=10000, resample the 204 images with
   replacement, recompute macro-mIoU from summed counts over the fixed class set of the MER split) →
   90% percentile CI on `mIoU_cross_rover` → `cross_rover_ci_low` (5th pct).
-- `baseline_on_MER_miou` = the `baseline` model's MER-test macro-mIoU **point estimate** (single scalar,
-  not CI-bounded).
-- **SUPPORT H4 iff `drop < 0.15` AND `cross_rover_ci_low > baseline_on_MER_miou`.** No p-value; Family D
+- `majority_on_MER_miou` = the constant-majority model's seed-reused MER-test point estimate.
+- **SUPPORT H4 iff `drop < 0.15` AND `cross_rover_ci_low > majority_on_MER_miou`.** No p-value; Family D
   has one member so Holm is a no-op. This rule is stated identically in §3, §5.5, §5.7, and §10.
 
 ### 5.8 H5 partial-GPU (Family E mixed ok/skipped) rule
 
-Family E has two members (`dinov3_sat_vs_baseline`, `sam_zeroshot_vs_baseline`). On `windows_cpu` both
+Family E has two members (`dinov3_sat_vs_tiny_unet`, `sam_region_oracle_vs_tiny_unet`). On CPU both
 are `status="skipped"` ⇒ **H5 = DEFERRED** (never blocks H1–H4). On a run where only some members
 completed (e.g. SAM ran but DINOv3 skipped):
 - **Holm runs over ONLY the members with `status=="ok"`.** Skipped members are reported
@@ -620,15 +519,16 @@ completed (e.g. SAM ran but DINOv3 skipped):
 - **H5 overall = support** iff ≥1 ok member has `holm_p < 0.10` (Δ>0); **reject** if all ok members fail;
   **deferred** if there are zero ok members.
 
-### 5.9 Canonical-run selection (comparison id → one run_id)
+### 5.9 Canonical-run selection (comparison id → primary run set)
 
 The results store may contain multiple runs for a `(model, backbone, variant, stratum)` tuple
-(re-runs, the optional multi-seed appendix `[1414..1418]`, CPU-smoke rows). `verdict.py` MUST resolve
-each comparison member to **exactly one** run_id deterministically:
-1. Filter rows to `seed == 1414` **AND** `profile == "gpu_full"` **AND** `status == "ok"`.
-2. If >1 row remains for a `(model, backbone, variant, stratum)` tuple, take the run whose
+(re-runs, multiple seeds, CPU-smoke rows). `verdict.py` resolves learned selectors to seeds
+`[1414,1415,1416]` with `profile=gpu_full,status=ok`; incomplete learned sets defer. Majority and SAM
+reuse one deterministic seed-1414 artifact across the paired strata.
+1. Require the configured seed policy and explicit YAML selector.
+2. If >1 row remains for one seed and `(model, backbone, variant, stratum)` tuple, take the run whose
    `manifest.timestamp_utc` is newest; **if still tied, raise** (do not guess).
-3. Load `experiments/manifests/<run_id>/per_image.parquet` for the two resolved run_ids and run §5.6.
+3. Load and align every resolved `per_image.parquet`, then run §5.6.
 
 ---
 
@@ -656,8 +556,10 @@ recomputes these same split-level formulas on each resample (§5.6).
 
 **SAM checkpoint (H5, GPU only).** Download `sam_vit_b_01ec64.pth` from
 `https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth` into `data/weights/sam/` and
-reference it via config key `model.sam_checkpoint`. Checkpoints are gitignored (`*.pth`). If the SAM
-import OR the checkpoint is absent, `foundation.py` skip-and-logs (`status="skipped"`).
+reference it via config key `model.sam_checkpoint`. Its SHA-256 is pinned by
+`model.sam_checkpoint_sha256`; `scripts/run_gpu.sh` promotes a download only after verification.
+Checkpoints are gitignored (`*.pth`). If the SAM import or a verified checkpoint is absent,
+`foundation.py` skip-and-logs (`status="skipped"`).
 
 ---
 
@@ -675,7 +577,7 @@ status, profile, seed, git_sha, config_hash]`. Allowed values:
 |---|---|
 | `model` | `baseline, unet, deeplabv3plus, segformer, dinov3_sat, sam` |
 | `backbone` | `resnet34, efficientnet-b0, resnet50, mit-b0, mit-b2, vitl16-sat493m, vit-b, none` |
-| `variant` | `pretrained, scratch, zeroshot, finetuned` |
+| `variant` | `constant, pretrained, scratch, finetuned, region_oracle_upper_bound` |
 | `scope` | `ALL` (overall) or a class name `soil, bedrock, sand, big_rock` |
 | `stratum` | `all, per_class, in_rover, cross_rover, pretrained, scratch` |
 | `metric` | `miou, iou, pixel_acc, boundary_f1, n` |
@@ -820,56 +722,57 @@ would fork `zoo.py`/`lit.py` and break `from marsseg.models.zoo import build_mod
 - `scripts/analyze_results.py --store experiments/results_store.parquet --hypotheses configs/hypotheses.yaml --out experiments/analysis/`
   → resolve each comparison to one run per member (§5.9); aggregate + paired-bootstrap (§5.6) / H4
   (§5.7) / McNemar (descriptive) + per-family Holm (α=0.10) → write `experiments/manifests/verdicts.json`
-  and `experiments/manifests/leaderboard.csv`; render H0–H5.
+  and `experiments/manifests/leaderboard.csv`; render H0–H5. The leaderboard contains explicit
+  `gpu_full` per-seed rows for `[1414,1415,1416]`; it is not the multi-seed hypothesis summary.
 - `scripts/merge_results.py --incoming <gpu_store.parquet> --into experiments/results_store.parquet`
   → dedup on `DEDUP_KEYS`.
 - `scripts/run_gpu.sh` → V100 turnkey (§2).
 
 **`verdicts.json` shape:** `{alpha:0.10, correction:"holm", generated_git_sha, families:{A:{members:
 [{comparison, delta, ci_low, ci_high, raw_p, holm_p, decision}]}, …}, hypotheses:{H0..H5:{decision:
-support|reject|deferred, evidence}}}`. **`leaderboard.csv`:** `model, backbone, variant, stratum, miou,
-ci_low, ci_high`. `prereg.py` freezes `experiments/PREREG.md` (hypotheses + families + thresholds +
+support|reject|deferred, evidence}}}`. **`leaderboard.csv`:** `model, backbone, variant, stratum,
+profile, seed, miou, ci_low, ci_high`; CI endpoints remain per-seed and are never averaged.
+`prereg.py` freezes `experiments/PREREG.md` (hypotheses + families + thresholds +
 seed) **before** any test-set numbers, and it is committed (gitignore-whitelisted).
 
 ---
 
 ## 9. Phases & gates (each gate = an exact runnable command + pass signal)
 
-Interpreter is `.venv/Scripts/python.exe` (Windows) or `.venv/bin/python` (V100). Pytest auto-excludes
+Interpreter is `.venv/Scripts/python.exe` (Windows) or `.venv/bin/python` (POSIX). Pytest auto-excludes
 `integration`/`network` tests via `pyproject addopts = "-q -m 'not integration and not network'"`.
 **PAUSE for user review at each gate before starting the next phase.**
 
-> **Executability note (updated 2026-07-03).** MS3 is BUILT: `run_experiment.py`, `configs/*`, and
-> `eval/*` all exist and the MS4 CPU-smoke command below is **verified runnable** (exit 0,
-> contract-valid run committed under `experiments/manifests/`). Full training now needs only the
-> V100: build `scripts/run_gpu.sh` (§2), run the sweep, merge back, re-run `analyze_results.py`.
+> **Executability note (updated 2026-07-10).** The CPU smoke is historical pipeline evidence only.
+> Protocol V2 verification intentionally refuses confirmatory analysis until the final snapshot is
+> sealed. GPU preflight, the multi-seed sweep, and result merge remain pending.
 
 | Phase | Status | Tasks | Gate command → pass signal |
 |---|---|---|---|
-| **MS0 — setup** | **DONE** (incl. the §3 `.env.example`/DINOv3 fix, 2026-07-01) | scaffold, utils, CI, `check_env`, commit-msg hook, gitignore, `.env.example` | `.venv/Scripts/python.exe scripts/check_env.py` → last line `core OK`, prints `profile=windows_cpu`, exit 0; `.venv/Scripts/python.exe -m pytest tests/test_smoke.py -q` → all pass; `.venv/Scripts/python.exe -m ruff check .` → `All checks passed!`; `.venv/Scripts/python.exe -m black --check .` → clean. |
+| **MS0 — setup** | Implemented | scaffold, utils, locked profiles, tracked pre-commit, CI, integrity check | `python scripts/check_integrity.py`; `python scripts/check_env.py`; offline lint/tests. |
 | **MS1 — data** | **DONE (fixed + re-verified 2026-07-01)** — §4.1 camera/pairing + §4.3 `name` fixes applied; real-layout count asserts green on this box | apply §4.1 camera/pairing fix + §4.3 `name` fix; add real-layout count asserts | `.venv/Scripts/python.exe -m pytest tests/test_data.py -q` → all pass, **including** new asserts: `build_index(DATA_ROOT,"msl")` → `len(train)==16064` and `len(test)==322` (against **min3**); `build_index(DATA_ROOT,"mer")` → `len(test)==204`, `train==[]`; every record has a non-empty unique camera-qualified `name`; `make_splits(val_frac=0.2, seed=1414)` → `set(train_names) & set(val_names) == set()`. Item contract = `{image FloatTensor (3,H,W), mask LongTensor (H,W) in {0,1,2,3,255}, name, rover}`. |
 | **MS2 — models** | **DONE (2026-07-02)** — gates A+B green (33 tests: gating skip/happy/load-failure/layout contracts + zoo/loss/lit); gate C runs with MS3 by design | build `models/foundation.py`; add contract test | (A) `.venv/Scripts/python.exe -m pytest tests/test_models.py -q` → pass (forward shapes `(B,4,H,W)`; unknown-model `ValueError`; combined-loss-ignore backward finite; Lightning `fast_dev_run`). (B) `build_model("dinov3_sat"|"sam", …)` returns a module OR skip-and-logs (`status="skipped"`, no crash) when weights/GPU absent. (C) **BLOCKED until MS3** authors `configs/models/baseline.yaml` + `scripts/run_experiment.py`: then `run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` writes a **contract-valid** run (§7.4) + ≥1 results row with `status ∈ {ok,skipped}`. |
-| **MS3 — eval** | **DONE (2026-07-03)** — 53 tests green; verdicts.json decides every H0–H5 (all deferred pre-GPU); PREREG sealed; MS2 gate C closed by the CPU smoke | `eval/{metrics,stats,prereg,aggregate,verdict,plots}.py` + `configs/*` + `scripts/{run_experiment,analyze_results}.py` + `PREREG.md` | `.venv/Scripts/python.exe -m pytest tests/test_eval.py -q` → pass, including: metrics + paired-bootstrap (§5.6) + verdict units; **`test_eval.py` loads `configs/hypotheses.yaml` and asserts every family/member/threshold/path is CONCRETE — no placeholder strings (`<pin…>`), `drop_threshold==0.15`, `mer.expected_test_n==204`, `data.expected_test_n==322`).** Then `.venv/Scripts/python.exe scripts/analyze_results.py --store experiments/results_store.parquet --hypotheses configs/hypotheses.yaml --out experiments/analysis/` writes `experiments/manifests/verdicts.json` with a decision in `{support, reject, deferred}` for **every** H0..H5, `ci_low ≤ value ≤ ci_high` where CIs exist, and **H5 = deferred on windows_cpu** (does NOT block H1–H4). |
-| **MS4 — runs** | **CPU smoke DONE; `run_gpu.sh` BUILT (bash-verified, 2026-07-03)**; V100 execution PENDING | CPU smoke; V100 full training + cross-rover (H4) + foundation (H5); merge-back | CPU smoke: `.venv/Scripts/python.exe scripts/run_experiment.py --config configs/models/baseline.yaml --override data.max_train_images=64 train.max_epochs=1` exits 0, writes contract-valid run (the override MUST actually subset to 64 train images — §5.4/§8). V100: `bash scripts/run_gpu.sh` exits 0. Merge: `.venv/bin/python scripts/merge_results.py --incoming <gpu_store.parquet> --into experiments/results_store.parquet` → store has a `miou`/`stratum=all`/`status=ok` row for each of {baseline,unet,deeplabv3plus,segformer} + a `cross_rover` row (H4), and `df.duplicated(subset=DEDUP_KEYS).sum()==0`. |
-| **MS5 — paper** | **NOT STARTED** | rubric-aligned paper + overlay figures + results binding + licenses; deliverables | `cd paper && latexmk -pdf main.tex` → exit 0, `paper/main.pdf` newer than `main.tex`; `sha256sum RESEARCH.MD` == `181361d246cc0f5e2cde7061ff3c4713815aad233fe61aeda4f8a0d496e84e31` (byte-exact); `grep -E 'H0|H1|H2|H3|H4|H5' paper/main.tex` → each hypothesis present with a decision word matching `verdicts.json`; paper includes a **Data & Model Licenses** subsection (§11). |
+| **MS3 — eval** | Implemented; V2 seal pending final stable tree | metrics, hierarchical bootstrap, YAML selectors, amendment, fail-closed snapshot verification | `python -m pytest tests/test_eval.py -q`; seal Protocol V2 before analysis. |
+| **MS4 — runs** | Pending | GPU memory preflight; three genuine seeds per learned arm; deterministic majority/SAM reuse; H4/H5; merge | Validate `scripts/run_gpu.sh`, then require complete manifests/checkpoints/per-image tables and zero duplicate result keys. |
+| **MS5 — paper** | Not started | rubric-aligned paper, results binding, limitations/licenses | `python scripts/check_integrity.py`; paper decisions must match sealed verdicts. |
 
 ---
 
 ## 10. Hypothesis → evidence decision table (results_store row patterns → verdicts)
 
-`verdict.py` resolves each comparison member to exactly one run (§5.9), selects rows by
+`verdict.py` resolves each comparison member to a primary run set (§5.9), selects rows by
 `(model, backbone, variant, scope, stratum, metric)`, joins the two runs' `per_image.parquet` on the
 camera-qualified `name` for the paired bootstrap (§5.6, seed 0, n=10000), then applies Holm within the
 family. **All bootstraps are on `iou`/macro-mIoU only; `pixel_acc`/`boundary_f1` are never tested (§6).**
 
 | Verdict | Rows compared (candidate vs baseline) | Decision |
 |---|---|---|
-| **H1 (Family A)** | `{model∈{unet,deeplabv3plus,segformer}, variant=pretrained, scope=ALL, stratum=all, metric=miou}` vs `{model=baseline, scope=ALL, stratum=all, metric=miou}` | **Reject H0** iff Holm-p < 0.10 for ≥1 member (Δ = candidate−baseline > 0). Else **H0 holds (honest)**. |
-| **H2 (Family B)** | for each of unet/deeplabv3plus/segformer: `variant=pretrained` vs `variant=scratch` (same model/backbone, scope=ALL, metric=miou) | **Support** iff Holm-p < 0.10 for ≥1 member (Δ = pretrained−scratch > 0). |
-| **H3 (Family C)** | `segformer` vs `unet` and `segformer` vs `deeplabv3plus`, scope=ALL (overall) AND scope∈{soil,bedrock,sand,big_rock} with metric=iou (per-class stratum); **Δ = segformer − cnn** | **Support** a direction (`sign(observed Δ)`) iff Holm-p < 0.10 (two-sided, §5.6); report per-class winners with the same fixed-class + resample rules. |
-| **H4 (Family D)** | subject = highest-`val_miou` model; `stratum=in_rover, scope=ALL, metric=miou` (MSL ncam test) vs `stratum=cross_rover` (MER test); plus `{model=baseline, stratum=cross_rover}` for the MER baseline | **Generalizes** iff `drop < 0.15` AND `cross_rover_ci_low > baseline_on_MER_miou` (§5.7; deterministic, no p-value, single-member family). |
-| **H5 (Family E)** | `{model=dinov3_sat, variant=finetuned}` and `{model=sam, variant=zeroshot}` vs `{model=baseline}`, metric=miou | On `gpu_full`: Holm over `ok` members; **support** iff ≥1 ok member Holm-p < 0.10 (Δ>0). Mixed ok/skipped → §5.8. All `status="skipped"` (windows_cpu / no weights) → **DEFERRED**; never blocks H1–H4. |
-| **H0** | — | Reported **honestly**: holds iff H1 not rejected. |
+| **H1 (Family A)** | pretrained deep systems vs `majority` | Reject H0 iff at least one positive comparison is Holm-significant. |
+| **H2 (Family B)** | pretrained vs scratch within each tested architecture/backbone | Support only “helps at least one tested architecture” when significant. |
+| **H3 (Family C)** | MiT-B2 vs the two configured CNN systems, overall and per class | One Holm family over every overall/per-class p-value; report direction and parameter counts. |
+| **H4 (Family D)** | validation-selected subject in-rover vs cross-rover; `majority` MER reference | Support iff drop < 0.15 and cross-rover CI low > majority-on-MER. |
+| **H5 (Family E)** | DINOv3-SAT and SAM region oracle vs `tiny_unet` | Holm over completed members; missing learned seed sets defer. |
+| **H0** | — | `reject` with supported H1; otherwise `fail_to_reject` or `deferred`. |
 
 ---
 
@@ -890,9 +793,6 @@ weights**, cite the DINOv3 paper, record the model id + license acceptance in `m
 Apache-2.0 but its ViT-B checkpoint is downloaded separately and must not be committed. ImageNet
 encoder weights arrive via `smp`/`transformers` under their respective licenses.
 
-**Compute topology.** Development + smoke run on **Windows 11 CPU** (`profile=windows_cpu`, versions
-float — §2). The local **RTX 5070 Ti (Blackwell) is INTENTIONALLY UNUSED** — do not target it. Full
-training runs on the incoming **V100 (16 GB, Ubuntu)** via `scripts/run_gpu.sh` — size models for 16 GB
-(hence distilled **DINOv3 ViT-L/16 SAT-493M**, not ViT-7B). `run_gpu.sh` makes it a one-command job
-whose outputs merge back into `experiments/results_store.parquet` via `merge_results.py` and re-decide
-the gated H5 (and finalize H1–H4). The CPU profile runs subset smoke only.
+**Compute topology.** Capability detection, not a hard-coded workstation description, selects CPU
+smoke versus CUDA execution. Record exact GPU model, memory, driver, wheel profile, and effective
+batch settings in each run manifest. A script being present is not proof that a full sweep completed.

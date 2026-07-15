@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 
 from ..data.ai4mars import CLASSES
-from .metrics import fixed_class_set, iou_from_counts, macro_miou_from_counts
+from .metrics import iou_from_counts
+from .stats import bootstrap_miou_ci, counts_from_per_image
 
 PER_IMAGE_COLUMNS = [
     "run_id",
@@ -89,8 +90,11 @@ def store_rows(
     config_hash: str,
     status: str = "ok",
     classes: list[str] = CLASSES,
+    bootstrap_resamples: int = 10_000,
+    bootstrap_seed: int = 0,
+    ci_level: float = 0.90,
 ) -> list[dict]:
-    """Split-level RESULT_COLUMNS rows from a per-image table (SUMMED counts, section 6)."""
+    """Split-level result rows, including an image-bootstrap CI for aggregate mIoU."""
     base = {
         "run_id": run_id,
         "model": model,
@@ -105,18 +109,26 @@ def store_rows(
         "ci_high": None,
     }
     sub = per_image[per_image["split"] == split]
-    iou = sub[(sub["metric"] == "iou") & (sub["scope"].isin(classes))]
-    inter_sums = np.array([iou[iou["scope"] == c]["inter"].sum() for c in classes], dtype=np.int64)
-    union_sums = np.array([iou[iou["scope"] == c]["union"].sum() for c in classes], dtype=np.int64)
-    class_set = fixed_class_set(union_sums)
-    n_images = sub["name"].nunique()
+    names, inter, union = counts_from_per_image(per_image, split, classes)
+    inter_sums = inter.sum(axis=1, dtype=np.int64)
+    union_sums = union.sum(axis=1, dtype=np.int64)
+    miou = bootstrap_miou_ci(
+        inter,
+        union,
+        n_resamples=bootstrap_resamples,
+        seed=bootstrap_seed,
+        ci_level=ci_level,
+    )
+    n_images = len(names)
     rows = [
         {
             **base,
             "scope": "ALL",
             "stratum": stratum,
             "metric": "miou",
-            "value": macro_miou_from_counts(inter_sums, union_sums, class_set),
+            "value": miou["miou"],
+            "ci_low": miou["ci_low"],
+            "ci_high": miou["ci_high"],
         },
         {**base, "scope": "ALL", "stratum": stratum, "metric": "n", "value": float(n_images)},
     ]

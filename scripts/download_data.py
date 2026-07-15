@@ -44,6 +44,12 @@ def _md5(path: Path, chunk: int = 1 << 20) -> str:
 def download(url: str, dest: Path, expected_md5: str | None = None) -> Path:
     """Resumable chunked download (HTTP Range) with a progress print and MD5 verify."""
     dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.is_file() and expected_md5:
+        got = _md5(dest)
+        if got == expected_md5:
+            print(f"  MD5 OK (cached): {dest.name}")
+            return dest
+        print(f"  cached file MD5 {got} != {expected_md5}; attempting resume/re-download")
     pos = dest.stat().st_size if dest.exists() else 0
     headers = {"Range": f"bytes={pos}-"} if pos else {}
     with requests.get(url, headers=headers, stream=True, timeout=60) as r:

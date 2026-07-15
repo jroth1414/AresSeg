@@ -3,11 +3,12 @@
     python scripts/analyze_results.py --store experiments/results_store.parquet \
         --hypotheses configs/hypotheses.yaml --out experiments/analysis/
 
-Verifies the pre-registration seal, resolves each comparison to canonical runs (5.9), runs the
-5.6 paired bootstrap / 5.7 H4 rule, applies Holm per family, and writes
+Verifies the complete historical chain and executable Protocol V3 seal, resolves each
+comparison to complete primary-seed run sets, runs the paired seed/image bootstrap / H4 rule,
+applies Holm per family, and writes
 ``experiments/manifests/verdicts.json`` + ``experiments/manifests/leaderboard.csv``. Every
-hypothesis H0..H5 gets a decision in {support, reject, deferred}; on windows_cpu (or an empty
-store) members defer rather than crash — H5 deferred never blocks H1-H4.
+hypothesis H0..H5 gets an explicit decision; on an empty/incomplete store members defer rather
+than falling back to smoke results. H0 non-significance is ``fail_to_reject``, never support.
 """
 
 from __future__ import annotations
@@ -42,16 +43,12 @@ def main(argv=None) -> int:
 
     hyp_cfg = load_yaml(args.hypotheses)
     data_cfg = load_yaml(REPO_ROOT / "configs" / "data.yaml")
-    # PREREG must be sealed BEFORE any verdict pass; freeze() is a no-op if already sealed.
-    prereg.freeze(
+    # Verification is read-only and occurs before even loading the result store. Missing or
+    # drifted protocol inputs fail closed; analysis must never create a seal after seeing data.
+    prereg.verify_protocol(
         hyp_cfg,
         data_cfg,
-        prereg_path=REPO_ROOT / "experiments" / "PREREG.md",
-        sha_path=REPO_ROOT / "experiments" / "manifests" / "PREREG.sha256",
-    )
-    prereg.verify(
-        REPO_ROOT / "experiments" / "PREREG.md",
-        REPO_ROOT / "experiments" / "manifests" / "PREREG.sha256",
+        repo_root=REPO_ROOT,
     )
 
     store_path = Path(args.store)

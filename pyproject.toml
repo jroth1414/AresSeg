@@ -1,13 +1,26 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68,<81", "wheel>=0.41,<1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "marsseg"
 version = "0.1.0"
 description = "Terrain-aware semantic segmentation for Mars rover drivability on AI4Mars (JHU EN.705.742)."
+readme = "README.md"
 requires-python = ">=3.11,<3.12"
+authors = [{ name = "John Roth" }]
+keywords = ["semantic-segmentation", "mars", "ai4mars", "computer-vision"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dynamic = ["dependencies"]
+
+[project.urls]
+Repository = "https://github.com/jroth1414/AAML-Research-Project"
 
 [tool.setuptools.packages.find]
 where = ["src"]

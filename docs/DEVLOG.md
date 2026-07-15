@@ -13,10 +13,8 @@ a long/tidy results store, deterministic seeding, capability detection, logging,
 `segmentation-models-pytorch` 0.5.0, transformers, albumentations, opencv, scikit-image);
 `check_env.py` → `profile=windows_cpu`, `core OK`.
 
-**Compute split.** Segmentation training is GPU-bound. The full pipeline + smoke tests run CPU-only;
-full model training targets the V100 (16 GB) via `scripts/run_gpu.sh`. The local RTX 5070 Ti
-(Blackwell) is left unused for training — its bleeding-edge toolchain isn't worth fighting when a
-well-supported V100 is available.
+**Compute split.** Segmentation training is GPU-bound. CPU supports offline tests and smoke runs;
+full training is capability-gated and records the actual CUDA device in run manifests.
 
 ## MS1 — AI4Mars data pipeline
 
@@ -117,14 +115,14 @@ license URL; stale NTL tokens purged from the live `.env`) and the DINOv2→DINO
 **Gate (MS1, green):** 27 pytest tests pass (16 in `test_data.py`, incl. 5 real-layout asserts on
 this box), `ruff` clean, `black` clean, `check_env.py` → `core OK`.
 
-**Next:** MS2 tail — `models/foundation.py` (DINOv3-SAT frozen backbone + head; SAM zero-shot;
+**Next:** MS2 tail — `models/foundation.py` (DINOv3-SAT frozen backbone + head; SAM regions;
 skip-and-log gating), then MS3.
 
 ## MS2 (tail) — foundation models (H5, gated) · branch `phase-ms2-foundation`
 
 Built `models/foundation.py`, closing MS2. **DINOv3-SAT arm:** `DinoV3SatSegmenter` wraps the gated
-`facebook/dinov3-vitl16-pretrain-sat493m` ViT-L/16 backbone (SAT-493M, the largest variant that fits
-the 16 GB V100) **frozen** — pinned to eval mode even under `.train()` — with a trainable
+`facebook/dinov3-vitl16-pretrain-sat493m` ViT-L/16 backbone (SAT-493M) **frozen** — pinned to eval
+mode even under `.train()` — with a trainable
 Conv3×3–GN–GELU–Conv1×1 head over the patch-token grid, bilinear-upsampled to input resolution; a
 token-grid/prefix mismatch raises at first forward rather than silently mis-gridding. **SAM arm:**
 `SamZeroShotSegmenter` builds the ViT-B automatic mask generator from `data/weights/sam/` (eval-only;
@@ -205,13 +203,13 @@ iou_zero/Holm-order test gaps closed, and the smoke val-cap deviation documented
 **Next:** MS4 — `scripts/run_gpu.sh`, the V100 sweep (7 training arms + H4 evals + H5), merge-back,
 `analyze_results.py` for real verdicts; then MS5 (paper).
 
-## MS4 (prep) — V100 turnkey handoff script · branch `phase-ms4-runs`
+## MS4 (historical prep) — GPU handoff-script draft
 
-Built `scripts/run_gpu.sh` — **bash-only** (LF endings enforced by `.gitattributes`; never run on
-Windows) — implementing DEVPLAN §2 steps 1–9 as one idempotent command on the Ubuntu V100 node:
+Drafted `scripts/run_gpu.sh` as a bash orchestration path. This entry records implementation work,
+not evidence that the current script, environment setup, resume validation, or full sweep passed:
 checkout `main` → venv (python3.11) → core deps → **cu121 torch 2.4.1 override** → extras
 (segment-anything, timm) → editable install → **pretrained-weight pre-cache** while the box has
-network (smp resnet34/resnet50 ImageNet + SegFormer b0/b2 ADE) → SAM ViT-B checkpoint fetch →
+network (smp resnet34/resnet50 ImageNet + SegFormer MiT encoders) → SAM ViT-B checkpoint fetch →
 hard `profile=gpu_full` + `core OK` gate → dataset presence check (downloads the 16 GB merged
 archive only if absent) → the **9 training arms** (resume markers under `experiments/.gpu_markers/`
 so an interrupted sweep restarts where it stopped; a failed arm is recorded and the sweep
@@ -228,3 +226,23 @@ through the Lightning DataModule and both eval loaders (default 0, verdict-neutr
 
 **Gate:** full suite still green after the wiring (53 tests, ruff, black). MS4 remains OPEN —
 the V100 execution + merge-back are the remaining work; MS5 (paper) after that.
+
+## 2026-07-10 — protocol and reproducibility hardening
+
+Closed the preregistration/code-binding gap without rewriting the historical preregistration. A
+dated Protocol V2 amendment now documents the majority and Tiny U-Net references, SAM
+`region_oracle_upper_bound` terminology, ImageNet MiT encoder transfer, three genuine learned-model
+seeds, deterministic-reference reuse, hierarchical seed/image bootstrap, complete Family-C Holm
+family, and H0 `fail_to_reject` semantics. Analysis verifies a canonical snapshot of configs, model
+YAML, and decision-driving code before reading results. Focused evaluation tests passed (28 tests).
+
+Reproducibility was also made clone-safe: the rubric digest has one source
+(`RESEARCH.MD.sha256`), `requirements.lock.txt` is UTF-8 and third-party-only, hardware profiles are
+separate, local source installs with `--no-deps`, CI uses pinned actions/runners and the CPU lock,
+and tracked pre-commit hooks replace claims about cloned `.git/hooks`. The CUDA profile installs
+with dependencies because PyTorch wheel metadata supplies its pinned Linux CUDA/Triton stack.
+There is no repository-level license grant.
+
+Hardware inspection on this server showed two visible `Tesla V100-SXM2-32GB` devices (32,768 MiB
+each, driver 580.159.03). This corrects the earlier 16 GB assumption but is not a portable protocol
+requirement. The confirmatory GPU sweep has not completed; the CPU smoke remains non-scientific.

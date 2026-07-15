@@ -2,9 +2,8 @@
 # the pipeline skip-and-logs these if absent.
 #
 # DINOv3 (the primary H5 foundation arm) loads via `transformers` (already in core requirements) as
-# `facebook/dinov3-vitl16-pretrain-sat493m` — the ViT-L variant pretrained on Earth satellite imagery
-# (SAT-493M). The weights are GATED: accept the DINOv3 license on Hugging Face and set HF_TOKEN in
-# .env (huggingface_hub is pulled by transformers). ViT-7B SAT is too large for a 16 GB V100; use
-# the distilled ViT-L. No extra pip install is needed for DINOv3 itself.
-segment-anything>=1.0    # Meta SAM (zero-shot mask proposals); needs a downloaded checkpoint
-timm>=1.0                # ViT backbones / alt DINOv3 loading path (also pulled by smp)
+# `facebook/dinov3-vitl16-pretrain-sat493m` — the ViT-L variant pretrained on Earth satellite
+# imagery (SAT-493M). The weights are gated: accept their license on Hugging Face and set
+# HF_TOKEN in .env. No extra pip install is needed for DINOv3 itself.
+segment-anything>=1.0,<2  # Meta SAM region proposals; needs a separately downloaded checkpoint
+timm>=1.0,<2              # ViT backbones / alternate DINOv3 loading path

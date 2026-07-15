@@ -18,6 +18,8 @@ from pathlib import Path
 
 from .capabilities import as_dict as caps_dict
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
 # Packages whose versions are worth recording for reproducibility.
 _TRACK = [
     "numpy",
@@ -45,16 +47,26 @@ def _ver(p: str) -> str | None:
         return None
 
 
+def _git_output(*args: str) -> str:
+    """Run a read-only Git query against this checkout without global config changes."""
+    return subprocess.check_output(
+        ["git", "-c", f"safe.directory={REPO_ROOT}", *args],
+        cwd=REPO_ROOT,
+        text=True,
+        stderr=subprocess.DEVNULL,
+    ).strip()
+
+
 def _git_sha() -> str:
     try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        return _git_output("rev-parse", "HEAD")
     except Exception:
         return "UNKNOWN"
 
 
 def _git_dirty() -> bool:
     try:
-        return bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip())
+        return bool(_git_output("status", "--porcelain"))
     except Exception:
         return False
 

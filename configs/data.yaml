@@ -10,6 +10,7 @@ data:
   split_by: image
   split_seed: 1414
   test_gold_dir: msl/ncam/labels/test/masked-gold-min3-100agree   # exact on-disk path incl. camera
+  expected_train_n: 16064
   expected_test_n: 322
   max_train_images: null       # CPU-smoke subset cap; consumed by run_experiment.py (DEVPLAN 8); null = full
 mer:
@@ -24,5 +25,13 @@ class_weights:
   clip: [0.5, 10.0]
   computed_on: train_split
   max_images: null             # label-scan cap for class_pixel_counts; NOT the training subset
-aug: {hflip_p: 0.5, brightness_limit: 0.2, contrast_limit: 0.2, rbc_p: 0.3,
-      vflip: false, scale_crop: false}
+aug:
+  hflip_p: 0.5
+  brightness_limit: 0.2
+  contrast_limit: 0.2
+  rbc_p: 0.3
+  vflip: false
+  vflip_p: 0.5
+  scale_crop: false
+  scale_limit: 0.1
+  scale_crop_p: 0.3

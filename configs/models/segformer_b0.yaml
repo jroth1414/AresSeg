@@ -1,4 +1,8 @@
-# SegFormer MiT-B0, ADE-pretrained (transformer arm, H1/H2/H3). zoo arg 'b0'; store label 'mit-b0'.
-model: {name: segformer, backbone: b0, results_backbone: mit-b0, pretrained: true}
+# SegFormer MiT-B0 with ImageNet-pretrained encoder. The revision is the official HF
+# safetensors conversion commit whose parent is the original preregistered weight revision.
+model: {name: segformer, backbone: b0, results_backbone: mit-b0, pretrained: true,
+        revision: 25ce79d97e6d9d509ed12e17cb2eb89b0a83a2dc,
+        weights_filename: model.safetensors,
+        weights_sha256: 3e5ad9cd1dd8ecf8305c23fcdf01ef241f08c7b2dddacb6ec7de5a887188798a}
 train: {batch_size: 8, max_epochs: 50, lr: 3e-4, weight_decay: 1e-4, dice_weight: 1.0,
         ignore_index: 255, early_stop_patience: 10, grad_clip: 1.0}

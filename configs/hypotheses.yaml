@@ -8,7 +8,7 @@ per_class_metric: iou
 descriptive_only: [pixel_acc, boundary_f1]   # NEVER tested
 stats:
   n_resamples: 10000
-  resampling_unit: image
+  resampling_unit: seed_then_image
   ci_method: percentile
   bootstrap_seed: 0
   rng: numpy_default_rng          # np.random.default_rng(0); one draw advanced per replicate (5.6)
@@ -17,24 +17,92 @@ stats:
   fixed_class_set: full_split_present   # classes with union>0 over the FULL split, fixed before bootstrap
   empty_class_in_resample: iou_zero     # a fixed-set class with union==0 in a resample contributes IoU=0
   mcnemar: {unit: pixel, scope: valid_pixels_only, correction: continuity, report: secondary_only}
-canonical_run_selection:            # how a comparison id resolves to ONE run_id (5.9)
-  filter: {seed: 1414, profile: gpu_full, status: ok}
-  tie_break: max_manifest_timestamp_utc   # if >1 remain for a (model,backbone,variant,stratum), take newest; if still tied, raise
+canonical_run_selection:            # how a comparison id resolves to one complete primary run set
+  filter: {seeds: [1414, 1415, 1416], profile: gpu_full, status: ok}
+  require_complete_seed_set: true
+  deterministic_models: [majority, sam]
+  deterministic_artifact_seed: 1414  # one prediction artifact is paired against every trained seed
+  backbone_selection: max_mean_best_val_miou_across_primary_seeds
+  tie_break: max_manifest_timestamp_utc   # within one seed/config tuple; exact ties raise
+comparisons:                        # executable selectors; sealed by PROTOCOL_V2.json
+  majority_vs_unet:
+    family: A
+    tail: greater
+    a: {model: unet, variant: pretrained, stratum: all}
+    b: {model: majority, variant: constant, stratum: all}
+  majority_vs_deeplabv3plus:
+    family: A
+    tail: greater
+    a: {model: deeplabv3plus, variant: pretrained, stratum: all}
+    b: {model: majority, variant: constant, stratum: all}
+  majority_vs_segformer:
+    family: A
+    tail: greater
+    a: {model: segformer, variant: pretrained, stratum: all}
+    b: {model: majority, variant: constant, stratum: all}
+  unet_pretrained_vs_scratch:
+    family: B
+    tail: greater
+    match_backbone: true
+    a: {model: unet, variant: pretrained, stratum: all}
+    b: {model: unet, variant: scratch, stratum: all}
+  deeplabv3plus_pretrained_vs_scratch:
+    family: B
+    tail: greater
+    match_backbone: true
+    a: {model: deeplabv3plus, variant: pretrained, stratum: all}
+    b: {model: deeplabv3plus, variant: scratch, stratum: all}
+  segformer_pretrained_vs_scratch:
+    family: B
+    tail: greater
+    match_backbone: true
+    a: {model: segformer, variant: pretrained, stratum: all}
+    b: {model: segformer, variant: scratch, stratum: all}
+  segformer_vs_unet:
+    family: C
+    tail: two_sided
+    per_class: true
+    a: {model: segformer, backbone: mit-b2, variant: pretrained, stratum: all}
+    b: {model: unet, variant: pretrained, stratum: all}
+  segformer_vs_deeplabv3plus:
+    family: C
+    tail: two_sided
+    per_class: true
+    a: {model: segformer, backbone: mit-b2, variant: pretrained, stratum: all}
+    b: {model: deeplabv3plus, variant: pretrained, stratum: all}
+  best_in_rover_vs_cross_rover:
+    family: D
+    subject_candidates:
+      - {model: unet, variant: pretrained, stratum: cross_rover}
+      - {model: deeplabv3plus, variant: pretrained, stratum: cross_rover}
+      - {model: segformer, variant: pretrained, stratum: cross_rover}
+    reference: {model: majority, variant: constant, stratum: cross_rover}
+  dinov3_sat_vs_tiny_unet:
+    family: E
+    tail: greater
+    a: {model: dinov3_sat, variant: finetuned, stratum: all}
+    b: {model: tiny_unet, variant: scratch, stratum: all}
+  sam_region_oracle_vs_tiny_unet:
+    family: E
+    tail: greater
+    a: {model: sam, variant: region_oracle_upper_bound, stratum: all}
+    b: {model: tiny_unet, variant: scratch, stratum: all}
 families:
-  A: {members: [baseline_vs_unet, baseline_vs_deeplabv3plus, baseline_vs_segformer]}
+  A: {members: [majority_vs_unet, majority_vs_deeplabv3plus, majority_vs_segformer]}
   B: {members: [unet_pretrained_vs_scratch, deeplabv3plus_pretrained_vs_scratch, segformer_pretrained_vs_scratch]}
-  C: {members: [segformer_vs_unet, segformer_vs_deeplabv3plus]}   # delta orientation: segformer - cnn
+  C: {members: [segformer_vs_unet, segformer_vs_deeplabv3plus]}   # one Holm family: ALL + every fixed-set class for both members
   D: {members: [best_in_rover_vs_cross_rover]}
-  E: {members: [dinov3_sat_vs_baseline, sam_zeroshot_vs_baseline]}
+  E: {members: [dinov3_sat_vs_tiny_unet, sam_region_oracle_vs_tiny_unet]}
 hypotheses:
   H1: {family: A, test: paired_bootstrap, statistic: delta_miou, tail: greater,
        metric: miou, decision_rule: "reject_H0 if holm_p < 0.10 for >=1 member (delta>0)"}
   H2: {family: B, test: paired_bootstrap, statistic: delta_miou, tail: greater, metric: miou,
-       decision_rule: "support if holm_p < 0.10 for >=1 member (delta>0)"}
+       decision_rule: "support only the claim that transfer helps >=1 tested architecture if holm_p < 0.10 for >=1 member (delta>0); no universal-transfer claim"}
   H3: {family: C, test: paired_bootstrap, tail: two_sided, strata: [all, per_class], metric: miou,
        delta_orientation: "segformer_minus_cnn", per_class_metric: iou,
-       decision_rule: "support a direction (sign(observed delta)) iff holm_p < 0.10 for that member"}
+       holm_scope: all_members_x_overall_and_fixed_set_classes,
+       decision_rule: "support a direction for any overall or per-class test iff its Family-C holm_p < 0.10; support H3 iff >=1 such test is significant"}
   H4: {family: D, test: threshold_plus_ci, statistic: miou_drop, drop_threshold: 0.15,
-       emits_p_value: false, decision_rule: "support iff drop < 0.15 AND cross_rover_ci_low > baseline_on_MER_miou"}
+       emits_p_value: false, decision_rule: "support iff drop < 0.15 AND cross_rover_ci_low > majority_on_MER_miou"}
   H5: {family: E, gated: true, decided_on_profile: gpu_full, on_missing_gpu: deferred,
        partial_gpu_rule: "holm over ok members only; support iff >=1 ok member holm_p<0.10 (delta>0); reject if all ok fail; deferred if zero ok members"}

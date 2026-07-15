@@ -1,0 +1,7 @@
+# Install WITH dependencies before requirements.lock.txt. Torch metadata pins its CUDA/triton
+# dependencies except nvJitLink, which is pinned explicitly below.
+--index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://pypi.org/simple
+nvidia-nvjitlink-cu12==12.9.86
+torch==2.4.1+cu121
+torchvision==0.19.1+cu121
