@@ -133,7 +133,7 @@ EXPECTED_AUGMENTATION = {
 }
 EXPECTED_TRAIN = {
     "batch_size": 8,
-    "num_workers": 0,
+    "num_workers": 8,
     "max_epochs": 50,
     "lr": 0.0003,
     "weight_decay": 0.0001,
