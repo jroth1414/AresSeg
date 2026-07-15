@@ -1,0 +1,10 @@
+model:
+  name: unet
+  backbone: resnet34
+  results_backbone: resnet34
+  pretrained: true
+mpba:
+  enabled: true
+  variant: range_cutoff
+  router_mode: content
+  coordinate_mode: range_cutoff
