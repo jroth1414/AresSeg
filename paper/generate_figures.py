@@ -165,7 +165,10 @@ def qualitative_predictions() -> None:
     if image is None or target is None:
         raise FileNotFoundError("selected AI4Mars qualitative example is unavailable")
 
-    panels: list[tuple[str, np.ndarray, bool]] = [("Rover image", image, True), ("Expert label", target, False)]
+    panels: list[tuple[str, np.ndarray, bool]] = [
+        ("Rover image", image, True),
+        ("Expert label", target, False),
+    ]
     for label, run_id in RUNS_1414.items():
         pred_path = ROOT / "experiments" / run_id / "preds" / "test_msl" / f"{name}.png"
         pred = cv2.imread(str(pred_path), cv2.IMREAD_UNCHANGED)
@@ -175,7 +178,11 @@ def qualitative_predictions() -> None:
 
     fig, axes = plt.subplots(2, 4, figsize=(10.4, 5.6), constrained_layout=True)
     for ax, (title, content, grayscale) in zip(axes.flat, panels, strict=False):
-        ax.imshow(content, cmap="gray" if grayscale else None) if grayscale else ax.imshow(colorize(content))
+        (
+            ax.imshow(content, cmap="gray" if grayscale else None)
+            if grayscale
+            else ax.imshow(colorize(content))
+        )
         ax.set_title(title, fontsize=9)
         ax.axis("off")
     legend_ax = axes.flat[-1]
