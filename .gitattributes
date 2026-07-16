@@ -17,3 +17,7 @@
 *.pt binary
 *.pth binary
 *.safetensors binary
+
+# This executed notebook is dominated by embedded PNG output, not source. Excluding it from
+# Linguist keeps GitHub's language chart representative of the implementation.
+notebooks/midpoint_prototype.ipynb linguist-generated=true

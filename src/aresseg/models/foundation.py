@@ -31,7 +31,7 @@ from ..utils.capabilities import has_cuda
 from ..utils.config import REPO_ROOT, load_env, require_secret
 from ..utils.logging import get_logger
 
-log = get_logger("marsseg.foundation")
+log = get_logger("aresseg.foundation")
 
 DINOV3_MODEL_ID = "facebook/dinov3-vitl16-pretrain-sat493m"
 SAM_MODEL_TYPE = "vit_b"

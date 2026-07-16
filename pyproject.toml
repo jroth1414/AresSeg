@@ -3,7 +3,7 @@ requires = ["setuptools>=68,<81", "wheel>=0.41,<1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "marsseg"
+name = "aresseg"
 version = "0.1.0"
 description = "Terrain-aware semantic segmentation for Mars rover drivability on AI4Mars (JHU EN.705.742)."
 readme = "README.md"
@@ -20,7 +20,7 @@ classifiers = [
 dynamic = ["dependencies"]
 
 [project.urls]
-Repository = "https://github.com/jroth1414/AAML-Research-Project"
+Repository = "https://github.com/jroth1414/AresSeg"
 
 [tool.setuptools.packages.find]
 where = ["src"]

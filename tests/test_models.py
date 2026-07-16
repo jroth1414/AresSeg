@@ -11,8 +11,8 @@ import pytest
 import torch
 import yaml
 
-from marsseg.models.zoo import build_model
-from marsseg.train.loss import CombinedLoss
+from aresseg.models.zoo import build_model
+from aresseg.train.loss import CombinedLoss
 
 
 @pytest.mark.parametrize(
@@ -51,7 +51,7 @@ def test_segformer_pretrained_loads_verified_safetensors_encoder_only(
     import sys
     from types import SimpleNamespace
 
-    from marsseg.models import zoo
+    from aresseg.models import zoo
 
     seen = {}
     test_token = "hf_test_mit_token_must_not_be_logged"
@@ -129,7 +129,7 @@ def test_segformer_pretrained_loads_verified_safetensors_encoder_only(
 
 @pytest.mark.parametrize("variant", ["b0", "b2"])
 def test_segformer_config_matches_safetensors_pin(variant):
-    from marsseg.models.zoo import SEGFORMER_SAFETENSORS
+    from aresseg.models.zoo import SEGFORMER_SAFETENSORS
 
     config_path = Path(__file__).parents[1] / "configs" / "models" / f"segformer_{variant}.yaml"
     model = yaml.safe_load(config_path.read_text(encoding="utf-8"))["model"]
@@ -143,7 +143,7 @@ def test_segformer_safe_loader_fails_closed(monkeypatch, tmp_path):
     import sys
     from types import SimpleNamespace
 
-    from marsseg.models import zoo
+    from aresseg.models import zoo
 
     (tmp_path / "model.safetensors").write_bytes(b"corrupt")
     (tmp_path / "config.json").write_text("{}", encoding="utf-8")
@@ -192,7 +192,7 @@ def _make_records(root, n=4, size=64):
 def test_lightning_fast_dev_run(tmp_path):
     import lightning as L
 
-    from marsseg.train.lit import SegDataModule, SegLitModule
+    from aresseg.train.lit import SegDataModule, SegLitModule
 
     recs = _make_records(tmp_path, n=4, size=64)
     dm = SegDataModule(recs[:3], recs[3:], batch_size=2, size=64)
@@ -212,7 +212,7 @@ def test_lightning_fast_dev_run(tmp_path):
 
 
 def test_dataloader_seed_controls_shuffle(tmp_path):
-    from marsseg.train.lit import SegDataModule
+    from aresseg.train.lit import SegDataModule
 
     records = _make_records(tmp_path, n=8, size=16)
     first = SegDataModule(records, records[:1], batch_size=2, size=16, seed=7)
@@ -234,7 +234,7 @@ def test_epoch_training_metrics_csv_artifact(tmp_path):
     from lightning.pytorch.callbacks import LearningRateMonitor
     from lightning.pytorch.loggers import CSVLogger
 
-    from marsseg.train.lit import SegDataModule, SegLitModule
+    from aresseg.train.lit import SegDataModule, SegLitModule
 
     records = _make_records(tmp_path / "records", n=4, size=32)
     module = SegLitModule(model_name="tiny_unet", max_epochs=1, pretrained=False)
@@ -280,7 +280,7 @@ def test_epoch_training_metrics_csv_artifact(tmp_path):
 
 
 def test_result_store_upsert_is_idempotent(tmp_path):
-    from marsseg.utils.results import append_results, read_results
+    from aresseg.utils.results import append_results, read_results
 
     parquet = tmp_path / "results.parquet"
     csv_path = tmp_path / "results.csv"
@@ -377,7 +377,7 @@ def test_h4_resume_requires_matching_source_checkpoint(monkeypatch, tmp_path):
 
 
 class _RecLogger:
-    """Captures log.warning calls (marsseg loggers set propagate=False, so caplog can't)."""
+    """Captures log.warning calls (aresseg loggers set propagate=False, so caplog can't)."""
 
     def __init__(self):
         self.msgs = []
@@ -391,7 +391,7 @@ def test_foundation_skips_and_logs_when_gated(monkeypatch):
 
     No skipif needed and no network possible — the gate trips before any load path.
     """
-    from marsseg.models import foundation
+    from aresseg.models import foundation
 
     rec = _RecLogger()
     monkeypatch.setattr(foundation, "has_cuda", lambda: False)
@@ -405,7 +405,7 @@ def test_foundation_skips_and_logs_when_gated(monkeypatch):
 
 def test_foundation_happy_paths_through_registry(monkeypatch, tmp_path):
     """Gate B 'returns a module' arm, offline: gates pass, loaders stubbed, kwargs plumb through."""
-    from marsseg.models import foundation
+    from aresseg.models import foundation
 
     monkeypatch.setattr(foundation, "has_cuda", lambda: True)
     monkeypatch.setenv("HF_TOKEN", "hf_dummy")
@@ -440,7 +440,7 @@ def test_foundation_happy_paths_through_registry(monkeypatch, tmp_path):
 
 def test_foundation_load_failure_skips_not_raises(monkeypatch):
     """Gates pass but the load blows up (e.g. HF 403 pending license) => skip-and-log, no crash."""
-    from marsseg.models import foundation
+    from aresseg.models import foundation
 
     rec = _RecLogger()
     monkeypatch.setattr(foundation, "has_cuda", lambda: True)
@@ -459,7 +459,7 @@ def test_foundation_load_failure_skips_not_raises(monkeypatch):
 
 
 def test_foundation_programming_errors_propagate(monkeypatch):
-    from marsseg.models import foundation
+    from aresseg.models import foundation
 
     monkeypatch.setattr(foundation, "has_cuda", lambda: True)
     monkeypatch.setenv("HF_TOKEN", "hf_dummy")
@@ -473,7 +473,7 @@ def test_foundation_programming_errors_propagate(monkeypatch):
 
 
 def test_foundation_gating_reasons(monkeypatch, tmp_path):
-    from marsseg.models import foundation
+    from aresseg.models import foundation
 
     ckpt = tmp_path / "sam_vit_b.pth"
     ckpt.write_bytes(b"x")
@@ -509,7 +509,7 @@ def test_dinov3_head_forward_contract():
     """Head/reshape/upsample logic offline via a stub backbone: (B,3,H,W) -> (B,4,H,W)."""
     from types import SimpleNamespace
 
-    from marsseg.models.foundation import DinoV3SatSegmenter
+    from aresseg.models.foundation import DinoV3SatSegmenter
 
     class _StubViT(torch.nn.Module):
         def __init__(self, hidden=64, patch=16, prefix=5):
@@ -546,7 +546,7 @@ def test_dinov3_head_spatial_layout():
     kept per-token (shape-only asserts are blind to transpose/gh-gw-swap/wrong-end-slice bugs)."""
     from types import SimpleNamespace
 
-    from marsseg.models.foundation import DinoV3SatSegmenter
+    from aresseg.models.foundation import DinoV3SatSegmenter
 
     class _PosViT(torch.nn.Module):
         def forward(self, pixel_values):

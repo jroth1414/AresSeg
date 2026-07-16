@@ -28,27 +28,33 @@ V2_PROTOCOL_SHA_PATH = Path("experiments/manifests/PROTOCOL_V2.sha256")
 V3_AMENDMENT_PATH = Path("experiments/PREREG_AMENDMENT_RUNTIME_SAFETENSORS_2026-07-10.md")
 PROTOCOL_PATH = Path("experiments/manifests/PROTOCOL_V3.json")
 PROTOCOL_SHA_PATH = Path("experiments/manifests/PROTOCOL_V3.sha256")
+# These schema names identify immutable historical formats.  They intentionally retain the
+# original project namespace after the user-facing project and Python package became AresSeg.
+PROTOCOL_V2_SCHEMA = "marsseg.protocol_snapshot.v2"
+PROTOCOL_V3_SCHEMA = "marsseg.protocol_snapshot.v3"
 # ``AMENDMENT_PATH`` remains the public name for the amendment belonging to the latest seal.
 AMENDMENT_PATH = V3_AMENDMENT_PATH
+# Live AresSeg paths for the next seal. The committed V3 snapshot retains legacy path keys, so
+# production verification intentionally fails closed until a truthful namespace amendment is sealed.
 RESULT_DRIVING_CODE_PATHS = (
-    Path("src/marsseg/data/ai4mars.py"),
-    Path("src/marsseg/data/dataset.py"),
-    Path("src/marsseg/data/preflight.py"),
-    Path("src/marsseg/data/transforms.py"),
-    Path("src/marsseg/models/zoo.py"),
-    Path("src/marsseg/models/foundation.py"),
-    Path("src/marsseg/train/loss.py"),
-    Path("src/marsseg/train/lit.py"),
-    Path("src/marsseg/eval/aggregate.py"),
-    Path("src/marsseg/eval/metrics.py"),
-    Path("src/marsseg/eval/prereg.py"),
-    Path("src/marsseg/eval/stats.py"),
-    Path("src/marsseg/eval/verdict.py"),
-    Path("src/marsseg/utils/capabilities.py"),
-    Path("src/marsseg/utils/config.py"),
-    Path("src/marsseg/utils/manifest.py"),
-    Path("src/marsseg/utils/results.py"),
-    Path("src/marsseg/utils/seed.py"),
+    Path("src/aresseg/data/ai4mars.py"),
+    Path("src/aresseg/data/dataset.py"),
+    Path("src/aresseg/data/preflight.py"),
+    Path("src/aresseg/data/transforms.py"),
+    Path("src/aresseg/models/zoo.py"),
+    Path("src/aresseg/models/foundation.py"),
+    Path("src/aresseg/train/loss.py"),
+    Path("src/aresseg/train/lit.py"),
+    Path("src/aresseg/eval/aggregate.py"),
+    Path("src/aresseg/eval/metrics.py"),
+    Path("src/aresseg/eval/prereg.py"),
+    Path("src/aresseg/eval/stats.py"),
+    Path("src/aresseg/eval/verdict.py"),
+    Path("src/aresseg/utils/capabilities.py"),
+    Path("src/aresseg/utils/config.py"),
+    Path("src/aresseg/utils/manifest.py"),
+    Path("src/aresseg/utils/results.py"),
+    Path("src/aresseg/utils/seed.py"),
     Path("scripts/check_data.py"),
     Path("scripts/run_experiment.py"),
     Path("scripts/run_gpu.sh"),
@@ -94,7 +100,7 @@ def _validated_v2_artifacts(snapshot_path: Path, sidecar_path: Path) -> None:
         raise RuntimeError("Protocol V2 snapshot is not valid JSON") from exc
     if text != canonical_json(payload):
         raise RuntimeError("Protocol V2 snapshot is not in canonical JSON form")
-    if payload.get("schema") != "marsseg.protocol_snapshot.v2":
+    if payload.get("schema") != PROTOCOL_V2_SCHEMA:
         raise RuntimeError("Protocol V2 snapshot has an unexpected schema")
 
 
@@ -138,7 +144,7 @@ def build_protocol_snapshot(
         code_hashes[relative.as_posix()] = _file_sha256(path)
 
     return {
-        "schema": "marsseg.protocol_snapshot.v3",
+        "schema": PROTOCOL_V3_SCHEMA,
         "amendment_date": "2026-07-10",
         "historical_artifact_sha256": {
             PREREG_PATH.as_posix(): _file_sha256(prereg_path),
@@ -186,7 +192,7 @@ def render(hyp_cfg: dict, data_cfg: dict) -> str:
     stats = hyp_cfg["stats"]
     fams = hyp_cfg["families"]
     lines = [
-        "# Pre-registration — marsseg (frozen BEFORE any test-set number is computed)",
+        "# Pre-registration — AresSeg (frozen BEFORE any test-set number is computed)",
         "",
         f"- Significance: alpha = {hyp_cfg['alpha']}, correction = {hyp_cfg['correction']} "
         f"(within family), CI level = {hyp_cfg['ci_level']} (percentile).",

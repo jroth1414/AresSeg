@@ -18,10 +18,10 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import pandas as pd  # noqa: E402
 
-from marsseg.utils.logging import get_logger  # noqa: E402
-from marsseg.utils.results import DEDUP_KEYS, RESULT_COLUMNS  # noqa: E402
+from aresseg.utils.logging import get_logger  # noqa: E402
+from aresseg.utils.results import DEDUP_KEYS, RESULT_COLUMNS  # noqa: E402
 
-log = get_logger("marsseg.merge")
+log = get_logger("aresseg.merge")
 
 
 def merge(incoming: pd.DataFrame, into: pd.DataFrame) -> pd.DataFrame:
