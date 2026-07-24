@@ -1,4 +1,4 @@
-"""Legacy preregistration and latest Protocol V4 executable-snapshot verification.
+"""Legacy preregistration and latest Protocol V5 executable-snapshot verification.
 
 ``freeze()`` renders the frozen protocol (hypotheses, families, thresholds, seeds, pinned test
 sets, and the SAM region-oracle scoring rule) to ``experiments/PREREG.md`` and records its
@@ -6,8 +6,7 @@ SHA-256 in ``experiments/manifests/PREREG.sha256``. If the file already exists i
 rewritten — ``verify()`` checks the hash and raises on tamper/mismatch.
 
 No amendment rewrites an earlier historical artifact. ``seal_protocol()`` creates a canonical
-Protocol V4 JSON snapshot binding the complete V1--V3 chain, the AresSeg administrative
-amendment, the full live decision configuration, every model YAML, and hashes of every
+Protocol V5 JSON snapshot binding the complete V1--V4 chain, the majority-class correction, the full live decision configuration, every model YAML, and hashes of every
 result-driving implementation. Production analysis calls ``verify_protocol()`` only: absence,
 non-canonical JSON, artifact tampering, or any live-input drift fails closed before results load.
 """
@@ -28,15 +27,19 @@ V3_AMENDMENT_PATH = Path("experiments/PREREG_AMENDMENT_RUNTIME_SAFETENSORS_2026-
 V3_PROTOCOL_PATH = Path("experiments/manifests/PROTOCOL_V3.json")
 V3_PROTOCOL_SHA_PATH = Path("experiments/manifests/PROTOCOL_V3.sha256")
 V4_AMENDMENT_PATH = Path("experiments/PREREG_AMENDMENT_ARESSEG_FINAL_2026-07-24.md")
-PROTOCOL_PATH = Path("experiments/manifests/PROTOCOL_V4.json")
-PROTOCOL_SHA_PATH = Path("experiments/manifests/PROTOCOL_V4.sha256")
+V4_PROTOCOL_PATH = Path("experiments/manifests/PROTOCOL_V4.json")
+V4_PROTOCOL_SHA_PATH = Path("experiments/manifests/PROTOCOL_V4.sha256")
+V5_AMENDMENT_PATH = Path("experiments/PREREG_AMENDMENT_MAJORITY_CLASS_2026-07-24.md")
+PROTOCOL_PATH = Path("experiments/manifests/PROTOCOL_V5.json")
+PROTOCOL_SHA_PATH = Path("experiments/manifests/PROTOCOL_V5.sha256")
 # These schema names identify immutable historical formats.  They intentionally retain the
 # original project namespace after the user-facing project and Python package became AresSeg.
 PROTOCOL_V2_SCHEMA = "marsseg.protocol_snapshot.v2"
 PROTOCOL_V3_SCHEMA = "marsseg.protocol_snapshot.v3"
 PROTOCOL_V4_SCHEMA = "aresseg.protocol_snapshot.v4"
+PROTOCOL_V5_SCHEMA = "aresseg.protocol_snapshot.v5"
 # ``AMENDMENT_PATH`` remains the public name for the amendment belonging to the latest seal.
-AMENDMENT_PATH = V4_AMENDMENT_PATH
+AMENDMENT_PATH = V5_AMENDMENT_PATH
 RESULT_DRIVING_CODE_PATHS = (
     Path("src/aresseg/data/ai4mars.py"),
     Path("src/aresseg/data/dataset.py"),
@@ -120,8 +123,10 @@ def build_protocol_snapshot(
     v2_snapshot_sha_path: Path | None = None,
     v3_snapshot_path: Path | None = None,
     v3_snapshot_sha_path: Path | None = None,
+    v4_snapshot_path: Path | None = None,
+    v4_snapshot_sha_path: Path | None = None,
 ) -> dict:
-    """Build the complete deterministic Protocol V4 payload from live and historical inputs."""
+    """Build the complete deterministic Protocol V5 payload from live and historical inputs."""
     repo_root = Path(repo_root).resolve()
     amendment_path = Path(amendment_path or repo_root / AMENDMENT_PATH)
     prereg_path = Path(prereg_path or repo_root / PREREG_PATH)
@@ -131,16 +136,22 @@ def build_protocol_snapshot(
     v2_snapshot_sha_path = Path(v2_snapshot_sha_path or repo_root / V2_PROTOCOL_SHA_PATH)
     v3_snapshot_path = Path(v3_snapshot_path or repo_root / V3_PROTOCOL_PATH)
     v3_snapshot_sha_path = Path(v3_snapshot_sha_path or repo_root / V3_PROTOCOL_SHA_PATH)
-    _existing_file(amendment_path, "Protocol V4 amendment")
+    v4_snapshot_path = Path(v4_snapshot_path or repo_root / V4_PROTOCOL_PATH)
+    v4_snapshot_sha_path = Path(v4_snapshot_sha_path or repo_root / V4_PROTOCOL_SHA_PATH)
+    _existing_file(amendment_path, "Protocol V5 amendment")
     _existing_file(prereg_path, "legacy preregistration")
     _existing_file(prereg_sha_path, "legacy preregistration SHA sidecar")
     _existing_file(v2_amendment_path, "Protocol V2 amendment")
     _existing_file(repo_root / V3_AMENDMENT_PATH, "Protocol V3 amendment")
+    _existing_file(repo_root / V4_AMENDMENT_PATH, "Protocol V4 amendment")
     _validated_historical_protocol(
         v2_snapshot_path, v2_snapshot_sha_path, version="V2", schema=PROTOCOL_V2_SCHEMA
     )
     _validated_historical_protocol(
         v3_snapshot_path, v3_snapshot_sha_path, version="V3", schema=PROTOCOL_V3_SCHEMA
+    )
+    _validated_historical_protocol(
+        v4_snapshot_path, v4_snapshot_sha_path, version="V4", schema=PROTOCOL_V4_SCHEMA
     )
     if not isinstance(hyp_cfg.get("comparisons"), dict) or not hyp_cfg["comparisons"]:
         raise RuntimeError("hypotheses config lacks executable comparison selectors")
@@ -157,7 +168,7 @@ def build_protocol_snapshot(
         code_hashes[relative.as_posix()] = _file_sha256(path)
 
     return {
-        "schema": PROTOCOL_V4_SCHEMA,
+        "schema": PROTOCOL_V5_SCHEMA,
         "amendment_date": "2026-07-24",
         "historical_artifact_sha256": {
             PREREG_PATH.as_posix(): _file_sha256(prereg_path),
@@ -168,7 +179,10 @@ def build_protocol_snapshot(
             V3_AMENDMENT_PATH.as_posix(): _file_sha256(repo_root / V3_AMENDMENT_PATH),
             V3_PROTOCOL_PATH.as_posix(): _file_sha256(v3_snapshot_path),
             V3_PROTOCOL_SHA_PATH.as_posix(): _file_sha256(v3_snapshot_sha_path),
-            V4_AMENDMENT_PATH.as_posix(): _file_sha256(amendment_path),
+            V4_AMENDMENT_PATH.as_posix(): _file_sha256(repo_root / V4_AMENDMENT_PATH),
+            V4_PROTOCOL_PATH.as_posix(): _file_sha256(v4_snapshot_path),
+            V4_PROTOCOL_SHA_PATH.as_posix(): _file_sha256(v4_snapshot_sha_path),
+            V5_AMENDMENT_PATH.as_posix(): _file_sha256(amendment_path),
         },
         "decision_inputs": {
             "data_config": deepcopy(data_cfg),
@@ -301,8 +315,10 @@ def seal_protocol(
     v2_snapshot_sha_path: Path | None = None,
     v3_snapshot_path: Path | None = None,
     v3_snapshot_sha_path: Path | None = None,
+    v4_snapshot_path: Path | None = None,
+    v4_snapshot_sha_path: Path | None = None,
 ) -> Path:
-    """Write Protocol V4 once; an existing seal is verified and never overwritten."""
+    """Write Protocol V5 once; an existing seal is verified and never overwritten."""
     repo_root = Path(repo_root).resolve()
     snapshot_path = Path(snapshot_path or repo_root / PROTOCOL_PATH)
     snapshot_sha_path = Path(snapshot_sha_path or repo_root / PROTOCOL_SHA_PATH)
@@ -313,7 +329,7 @@ def seal_protocol(
     if snapshot_path.exists() or snapshot_sha_path.exists():
         if not snapshot_path.is_file() or not snapshot_sha_path.is_file():
             raise RuntimeError(
-                "partial Protocol V4 seal — snapshot and SHA sidecar are both required"
+                "partial Protocol V5 seal — snapshot and SHA sidecar are both required"
             )
         verify_protocol(
             hyp_cfg,
@@ -329,6 +345,8 @@ def seal_protocol(
             v2_snapshot_sha_path=v2_snapshot_sha_path,
             v3_snapshot_path=v3_snapshot_path,
             v3_snapshot_sha_path=v3_snapshot_sha_path,
+            v4_snapshot_path=v4_snapshot_path,
+            v4_snapshot_sha_path=v4_snapshot_sha_path,
         )
         return snapshot_path
     payload = build_protocol_snapshot(
@@ -343,6 +361,8 @@ def seal_protocol(
         v2_snapshot_sha_path=v2_snapshot_sha_path,
         v3_snapshot_path=v3_snapshot_path,
         v3_snapshot_sha_path=v3_snapshot_sha_path,
+        v4_snapshot_path=v4_snapshot_path,
+        v4_snapshot_sha_path=v4_snapshot_sha_path,
     )
     text = canonical_json(payload)
     snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -367,8 +387,10 @@ def verify_protocol(
     v2_snapshot_sha_path: Path | None = None,
     v3_snapshot_path: Path | None = None,
     v3_snapshot_sha_path: Path | None = None,
+    v4_snapshot_path: Path | None = None,
+    v4_snapshot_sha_path: Path | None = None,
 ) -> None:
-    """Fail closed unless the complete historical chain and Protocol V4 match live inputs."""
+    """Fail closed unless the complete historical chain and Protocol V5 match live inputs."""
     repo_root = Path(repo_root).resolve()
     snapshot_path = Path(snapshot_path or repo_root / PROTOCOL_PATH)
     snapshot_sha_path = Path(snapshot_sha_path or repo_root / PROTOCOL_SHA_PATH)
@@ -376,23 +398,23 @@ def verify_protocol(
     prereg_path = Path(prereg_path or repo_root / PREREG_PATH)
     prereg_sha_path = Path(prereg_sha_path or repo_root / SHA_PATH)
     verify(prereg_path, prereg_sha_path)
-    _existing_file(snapshot_path, "Protocol V4 snapshot")
-    _existing_file(snapshot_sha_path, "Protocol V4 SHA sidecar")
+    _existing_file(snapshot_path, "Protocol V5 snapshot")
+    _existing_file(snapshot_sha_path, "Protocol V5 SHA sidecar")
 
     text = snapshot_path.read_text(encoding="utf-8")
     expected_sha = snapshot_sha_path.read_text(encoding="utf-8").strip()
     actual_sha = _sha256(text)
     if actual_sha != expected_sha:
         raise RuntimeError(
-            f"Protocol V4 snapshot hash mismatch (expected {expected_sha[:12]}…, "
+            f"Protocol V5 snapshot hash mismatch (expected {expected_sha[:12]}…, "
             f"got {actual_sha[:12]}…)"
         )
     try:
         sealed = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise RuntimeError("Protocol V4 snapshot is not valid JSON") from exc
+        raise RuntimeError("Protocol V5 snapshot is not valid JSON") from exc
     if text != canonical_json(sealed):
-        raise RuntimeError("Protocol V4 snapshot is not in canonical JSON form")
+        raise RuntimeError("Protocol V5 snapshot is not in canonical JSON form")
 
     live = build_protocol_snapshot(
         hyp_cfg,
@@ -406,7 +428,9 @@ def verify_protocol(
         v2_snapshot_sha_path=v2_snapshot_sha_path,
         v3_snapshot_path=v3_snapshot_path,
         v3_snapshot_sha_path=v3_snapshot_sha_path,
+        v4_snapshot_path=v4_snapshot_path,
+        v4_snapshot_sha_path=v4_snapshot_sha_path,
     )
     difference = _first_difference(sealed, live)
     if difference:
-        raise RuntimeError(f"Protocol V4 live-input drift: {difference}; analysis refused")
+        raise RuntimeError(f"Protocol V5 live-input drift: {difference}; analysis refused")

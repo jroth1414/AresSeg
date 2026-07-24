@@ -3,7 +3,7 @@
     python scripts/analyze_results.py --store experiments/results_store.parquet \
         --hypotheses configs/hypotheses.yaml --out experiments/analysis/
 
-Verifies the complete historical chain and executable Protocol V4 seal, resolves each
+Verifies the complete historical chain and executable Protocol V5 seal, resolves each
 comparison to complete primary-seed run sets, runs the paired seed/image bootstrap / H4 rule,
 applies Holm per family, and writes
 ``experiments/manifests/verdicts.json`` + ``experiments/manifests/leaderboard.csv``. Every

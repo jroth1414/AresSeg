@@ -564,13 +564,13 @@ def main(argv=None) -> int:
 
         majority_counts = class_pixel_counts(index["train"], num_classes=NUM_CLASSES)
         majority_class = int(np.argmax(majority_counts))
-        if majority_class != 0:
-            raise AssertionError(
-                f"constant-soil baseline invalid: class 0 is not the training majority; "
-                f"counts={majority_counts.tolist()}"
-            )
         stages.append("majority_class_evidence")
-        majority_model = build_model("majority", num_classes=NUM_CLASSES, pretrained=False)
+        majority_model = build_model(
+            "majority",
+            num_classes=NUM_CLASSES,
+            pretrained=False,
+            predicted_class=majority_class,
+        )
         parameter_counts = _parameter_counts(majority_model)
         device = "cuda" if profile == "gpu_full" else "cpu"
         per_image_rows: list[dict] = []

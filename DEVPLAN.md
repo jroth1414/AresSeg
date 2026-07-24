@@ -307,7 +307,7 @@ Lightning's `Trainer` provides the loop/AMP/DDP/checkpoint/early-stop. `run_expe
 
 | `model` id | class / lib | default backbone | pretrained source | params |
 |---|---|---|---|---|
-| `majority` | parameter-free constant class 0 (soil) | — (`none`) | never (H0/H1 and H4 reference) | 0 |
+| `majority` | parameter-free training-pixel majority (class 1, bedrock, under the sealed split) | — (`none`) | never (H0/H1 and H4 reference) | 0 |
 | `tiny_unet` (`baseline` legacy alias) | `TinyUNet` (from scratch, `base=16`) | — (`none`) | never (learned H5 reference) | ~117 k |
 | `unet` | smp `Unet` | `resnet34` | `encoder_weights="imagenet"` if pretrained (network on first use) | 24.4 M |
 | `deeplabv3plus` | smp `DeepLabV3Plus` | `resnet50` | `encoder_weights="imagenet"` if pretrained (network on first use) | 26.7 M |

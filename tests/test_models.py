@@ -32,12 +32,12 @@ def test_zoo_forward_shapes(name, kw):
     assert tuple(out.shape) == (2, 4, 64, 64)
 
 
-def test_majority_is_parameter_free_constant_soil():
-    model = build_model("majority", num_classes=4)
+def test_majority_is_parameter_free_and_uses_configured_class():
+    model = build_model("majority", num_classes=4, predicted_class=1)
     assert sum(parameter.numel() for parameter in model.parameters()) == 0
     logits = model(torch.randn(2, 3, 13, 17))
     assert tuple(logits.shape) == (2, 4, 13, 17)
-    assert set(logits.argmax(1).unique().tolist()) == {0}
+    assert set(logits.argmax(1).unique().tolist()) == {1}
 
 
 def test_unknown_model():
