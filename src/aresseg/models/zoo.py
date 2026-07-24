@@ -38,7 +38,7 @@ SEGFORMER_SAFETENSORS = {
 # baselines: constant majority class + tiny from-scratch U-Net
 # --------------------------------------------------------------------------------------
 class MajorityClassBaseline(nn.Module):
-    """Parameter-free class-0 predictor used as the genuine non-deep baseline."""
+    """Parameter-free constant predictor; the runner supplies the training-majority class."""
 
     def __init__(self, num_classes: int = 4, predicted_class: int = 0):
         super().__init__()
@@ -202,6 +202,7 @@ def build_model(
     pretrained: bool = True,
     sam_checkpoint: str | None = None,
     revision: str | None = None,
+    predicted_class: int = 0,
 ) -> nn.Module | None:
     """Build a segmentation model with ImageNet-pretrained encoders when requested.
 
@@ -211,7 +212,7 @@ def build_model(
     """
     name = name.lower()
     if name == "majority":
-        return MajorityClassBaseline(num_classes=num_classes)
+        return MajorityClassBaseline(num_classes=num_classes, predicted_class=predicted_class)
     if name in {"tiny_unet", "baseline"}:
         return TinyUNet(num_classes=num_classes)
     if name in ("dinov3_sat", "sam"):

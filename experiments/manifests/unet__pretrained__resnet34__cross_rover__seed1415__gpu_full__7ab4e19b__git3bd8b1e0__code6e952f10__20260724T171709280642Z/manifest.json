@@ -1,0 +1,145 @@
+{
+  "run_id": "unet__pretrained__resnet34__cross_rover__seed1415__gpu_full__7ab4e19b__git3bd8b1e0__code6e952f10__20260724T171709280642Z",
+  "timestamp_utc": "2026-07-24T17:24:23Z",
+  "git_sha": "3bd8b1e0e56c519f277e148aa23e8d1d3384a78c",
+  "git_dirty": false,
+  "python": "3.11.15 (main, Mar 11 2026, 17:20:07) [GCC 14.3.0]",
+  "platform": "Linux-6.8.0-124-generic-x86_64-with-glibc2.39",
+  "seed": 1415,
+  "profile": "gpu_full",
+  "capabilities": {
+    "cuda": true,
+    "gpu_name": "Tesla V100-SXM2-32GB",
+    "smp": true,
+    "transformers": true,
+    "sam": true,
+    "timm": true,
+    "profile": "gpu_full"
+  },
+  "packages": {
+    "numpy": "2.0.2",
+    "pandas": "2.2.3",
+    "pyarrow": "17.0.0",
+    "scikit-learn": "1.9.0",
+    "scikit-image": "0.26.0",
+    "scipy": "1.17.1",
+    "torch": "2.4.1+cu121",
+    "torchvision": "0.19.1+cu121",
+    "segmentation-models-pytorch": "0.5.0",
+    "transformers": "5.12.1",
+    "timm": "1.0.27",
+    "albumentations": "2.0.8",
+    "opencv-python-headless": "4.13.0.92",
+    "pillow": "12.2.0",
+    "segment-anything": "1.0"
+  },
+  "config": {
+    "data": {
+      "root": "data/raw/ai4mars/ai4mars-dataset-merged-0.6",
+      "rover": "msl",
+      "camera": "ncam",
+      "val_frac": 0.2,
+      "size": 512,
+      "seed": 1415,
+      "split_by": "image",
+      "split_seed": 1414,
+      "test_gold_dir": "msl/ncam/labels/test/masked-gold-min3-100agree",
+      "expected_train_n": 16064,
+      "expected_test_n": 322,
+      "max_train_images": null
+    },
+    "mer": {
+      "rover": "mer",
+      "image_dirs": [
+        "mer/images/eff",
+        "mer/images/test"
+      ],
+      "test_gold_dir": "mer/labels/test/masked-gold-min3-100agree",
+      "expected_test_n": 204,
+      "has_train": false
+    },
+    "class_weights": {
+      "method": "inverse_freq_normalized",
+      "formula": "w_c = median(counts)/counts_c",
+      "clip": [
+        0.5,
+        10.0
+      ],
+      "computed_on": "train_split",
+      "max_images": null
+    },
+    "aug": {
+      "hflip_p": 0.5,
+      "brightness_limit": 0.2,
+      "contrast_limit": 0.2,
+      "rbc_p": 0.3,
+      "vflip": false,
+      "vflip_p": 0.5,
+      "scale_crop": false,
+      "scale_limit": 0.1,
+      "scale_crop_p": 0.3
+    },
+    "model": {
+      "name": "unet",
+      "backbone": "resnet34",
+      "results_backbone": "resnet34",
+      "pretrained": true
+    },
+    "train": {
+      "batch_size": 8,
+      "max_epochs": 50,
+      "lr": "3e-4",
+      "weight_decay": "1e-4",
+      "dice_weight": 1.0,
+      "ignore_index": 255,
+      "early_stop_patience": 10,
+      "grad_clip": 1.0,
+      "num_workers": 8
+    }
+  },
+  "config_hash": "7ab4e19bd54e066ed810750af4911d73f41971cbc44978bc49e47b7f4880d390",
+  "model": "unet",
+  "backbone": "resnet34",
+  "variant": "pretrained",
+  "dataset": "ai4mars_msl_ncam",
+  "data_hashes": {
+    "msl_index_sha256": "f6629551c918a73afe9e4215abe45cf6a08331cba6f0d5ccbe0cf255219b4a09",
+    "mer_index_sha256": "9896a26fd463d54748ca08ced0b5ac0a0609de4c0881069e9056def0a9afeaa7"
+  },
+  "stages_completed": [
+    "index",
+    "splits",
+    "class_weights",
+    "load_checkpoint",
+    "eval_test_msl",
+    "eval_test_mer"
+  ],
+  "gpu_stages_skipped": [],
+  "external_revision": null,
+  "class_weights": [
+    0.665502934358027,
+    0.5,
+    2.0105472357316843,
+    10.0
+  ],
+  "resolved_test_gold_dir": "msl/ncam/labels/test/masked-gold-min3-100agree",
+  "weights_source": "cache",
+  "best_val_miou": 0.8523632287979126,
+  "val_truncated_to": null,
+  "data_counts": {
+    "n_train": 12851,
+    "n_val": 3213,
+    "n_test": 322
+  },
+  "data_fingerprints": {
+    "msl_index_sha256": "f6629551c918a73afe9e4215abe45cf6a08331cba6f0d5ccbe0cf255219b4a09",
+    "mer_index_sha256": "9896a26fd463d54748ca08ced0b5ac0a0609de4c0881069e9056def0a9afeaa7"
+  },
+  "code_fingerprint": "6e952f10c43930070e46c0f152e6e07687ec1c3276a9a6c8e23aabd4be7533bd",
+  "evaluation_split": "gold",
+  "skip_reasons": [],
+  "total_parameters": 24436804,
+  "trainable_parameters": 24436804,
+  "training_metrics_path": null,
+  "source_checkpoint": "experiments/unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z/best.ckpt"
+}

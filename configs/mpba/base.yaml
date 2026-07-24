@@ -1,0 +1,57 @@
+# Additive MPBA screening defaults. Loaded after configs/data.yaml by run_mpba_experiment.py.
+# Nothing in this tree is part of the sealed Protocol V3 result store or gold evaluation.
+experiment:
+  family: mpba_perspective_first
+  phase: seed1414_validation_screen
+
+mpba:
+  enabled: true
+  router_mode: content
+  coordinate_mode: none
+  projection_channels: 128
+  num_scales: 4
+  cutoff_loss_weight: 0.1
+  range_mask_dir: null          # null = resolve the supplied rng-30m tree from each EDR path
+  strict_range_masks: true
+  matched_cohort_exclusions:
+    - NLB_432655207EDR_F0160148NCAM00394M1.JPG
+
+train:
+  batch_size: 8
+  num_workers: 8
+  max_epochs: 50
+  lr: 0.0003
+  weight_decay: 0.0001
+  dice_weight: 1.0
+  ignore_index: 255
+  early_stop_patience: 10
+  grad_clip: 1.0
+
+evaluation:
+  split: validation
+  boundary_tolerance_px: 3
+  big_rock_class: 3
+  small_component_min_pixels: 16
+  small_component_max_pixels: 256
+  small_component_coverage: 0.5
+
+profiling:
+  batch_size: 1
+  image_size: 512
+  precision: fp16
+  warmup_iterations: 50
+  measured_iterations: 200
+  required_gpu_substring: V100
+
+promotion:
+  miou_gain_min: 0.003
+  big_rock_iou_gain_min: 0.01
+  max_other_class_drop: 0.005
+  max_median_latency_increase: 0.15
+  routing_scale_usage_min: 0.10
+  routing_scales_required: 2
+  range_cutoff_mae_max: 0.05
+  raw_y_tie_margin: 0.001
+
+results:
+  root: experiments/mpba

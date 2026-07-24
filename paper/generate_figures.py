@@ -21,7 +21,7 @@ FIGURES = ROOT / "paper" / "figures"
 FIGURES.mkdir(parents=True, exist_ok=True)
 sys.path.insert(0, str(ROOT / "src"))
 
-from marsseg.data.ai4mars import CLASS_COLORS, CLASSES, IGNORE_INDEX, build_index  # noqa: E402
+from aresseg.data.ai4mars import CLASS_COLORS, CLASSES, IGNORE_INDEX, build_index  # noqa: E402
 
 RESULTS = ROOT / "experiments" / "results_store.csv"
 DATA_ROOT = ROOT / "data" / "raw" / "ai4mars" / "ai4mars-dataset-merged-0.6"

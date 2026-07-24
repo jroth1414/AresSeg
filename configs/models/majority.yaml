@@ -1,4 +1,4 @@
-# Parameter-free constant-soil reference. Class 0 must be verified as the training majority.
+# Parameter-free reference. The runner derives the constant class from training-split pixels.
 model: {name: majority, backbone: null, results_backbone: none, pretrained: false}
 train: {batch_size: 8, max_epochs: 0, lr: 0.0, weight_decay: 0.0, dice_weight: 1.0,
         ignore_index: 255, early_stop_patience: 0, grad_clip: 0.0}

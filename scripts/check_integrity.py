@@ -19,7 +19,12 @@ def main() -> int:
     if b"\x00" in lock_bytes:
         raise SystemExit("requirements.lock.txt must be UTF-8, not UTF-16/NUL-delimited")
     lock = lock_bytes.decode("utf-8")
-    forbidden = ("AAML-Research-Project.git", "#egg=marsseg")
+    forbidden = (
+        "AAML-Research-Project.git",
+        "AresSeg.git",
+        "#egg=marsseg",
+        "#egg=aresseg",
+    )
     if any(token in lock for token in forbidden) or any(
         line.startswith(("-e ", "git+")) for line in lock.splitlines()
     ):

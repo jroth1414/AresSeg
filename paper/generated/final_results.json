@@ -1,0 +1,150 @@
+{
+  "generated_from": [
+    "experiments/results_store.parquet",
+    "experiments/manifests/verdicts.json"
+  ],
+  "protocol_sha256": "8485810bebed7d1396a0e8c065873ca56c6ea65565f3a919898d46509734ae04",
+  "hypotheses": {
+    "H0": {
+      "decision": "reject",
+      "evidence": "H0 is rejected iff Family A rejects at least one majority comparison; otherwise non-significance is fail-to-reject, never support for H0."
+    },
+    "H1": {
+      "decision": "support",
+      "evidence": "Family A deep models vs constant-majority, Holm alpha=0.10."
+    },
+    "H2": {
+      "decision": "reject",
+      "evidence": "Family B pretrained vs scratch, Holm alpha=0.10; support means transfer helped at least one tested architecture, not that transfer helps generally."
+    },
+    "H3": {
+      "decision": "reject",
+      "evidence": "Family C is one Holm family over both overall tests and every fixed-set per-class test for both SegFormer-CNN comparisons."
+    },
+    "H4": {
+      "decision": "support",
+      "evidence": {
+        "miou_in_rover": 0.8211188232667289,
+        "miou_cross_rover": 0.7916114079521379,
+        "drop": 0.029507415314591,
+        "drop_threshold": 0.15,
+        "cross_rover_ci_low": 0.7248005128611823,
+        "cross_rover_ci_high": 0.8477619219871253,
+        "baseline_on_mer_miou": 0.0683903968364468,
+        "n_seeds": 3,
+        "subject_selector": {
+          "model": "unet",
+          "variant": "pretrained",
+          "stratum": "cross_rover"
+        },
+        "subject_runs": [
+          "unet__pretrained__resnet34__cross_rover__seed1414__gpu_full__f8a3ff04__git3bd8b1e0__code6e952f10__20260724T171709224449Z",
+          "unet__pretrained__resnet34__cross_rover__seed1415__gpu_full__7ab4e19b__git3bd8b1e0__code6e952f10__20260724T171709280642Z",
+          "unet__pretrained__resnet34__cross_rover__seed1416__gpu_full__1cfcca16__git3bd8b1e0__code6e952f10__20260724T172450311142Z"
+        ],
+        "reference_runs": [
+          "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z",
+          "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z",
+          "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z"
+        ],
+        "seeds": [
+          1414,
+          1415,
+          1416
+        ],
+        "mean_best_val_miou": 0.8540289799372355
+      }
+    },
+    "H5": {
+      "decision": "support",
+      "evidence": "Family E compares DINOv3-SAT and the SAM region-oracle upper bound with the learned TinyUNet reference; incomplete primary seed sets defer."
+    }
+  },
+  "model_summary": [
+    {
+      "system": "Majority (bedrock)",
+      "n": 1,
+      "mean": 0.05597769595010467,
+      "sd": NaN,
+      "params": 0.0
+    },
+    {
+      "system": "Tiny U-Net",
+      "n": 3,
+      "mean": 0.6885344372141088,
+      "sd": 0.01363461586436597,
+      "params": 117412.0
+    },
+    {
+      "system": "U-Net R34 \u00b7 pretrained",
+      "n": 3,
+      "mean": 0.8211188232667289,
+      "sd": 0.012994322533895661,
+      "params": 24436804.0
+    },
+    {
+      "system": "U-Net R34 \u00b7 scratch",
+      "n": 3,
+      "mean": 0.824290639249654,
+      "sd": 0.004754480964450331,
+      "params": 24436804.0
+    },
+    {
+      "system": "DeepLabV3+ R50 \u00b7 pretrained",
+      "n": 3,
+      "mean": 0.8100869146623152,
+      "sd": 0.019034055799991956,
+      "params": 26678356.0
+    },
+    {
+      "system": "DeepLabV3+ R50 \u00b7 scratch",
+      "n": 3,
+      "mean": 0.8152688494548394,
+      "sd": 0.010647130725692159,
+      "params": 26678356.0
+    },
+    {
+      "system": "SegFormer B0 \u00b7 pretrained",
+      "n": 3,
+      "mean": 0.8142940610007544,
+      "sd": 0.011868904523235002,
+      "params": 3715172.0
+    },
+    {
+      "system": "SegFormer B0 \u00b7 scratch",
+      "n": 3,
+      "mean": 0.8137170024338746,
+      "sd": 0.01995389135110738,
+      "params": 3715172.0
+    },
+    {
+      "system": "SegFormer B2 \u00b7 pretrained",
+      "n": 3,
+      "mean": 0.8154473067454808,
+      "sd": 0.017899226276632284,
+      "params": 27349700.0
+    },
+    {
+      "system": "SegFormer B2 \u00b7 scratch",
+      "n": 3,
+      "mean": 0.7367659694958425,
+      "sd": 0.055920296015415455,
+      "params": 27349700.0
+    },
+    {
+      "system": "DINOv3-SAT ViT-L/16",
+      "n": 3,
+      "mean": 0.8361474017337128,
+      "sd": 0.017576535988825342,
+      "params": 305490436.0
+    },
+    {
+      "system": "SAM region-oracle upper bound",
+      "n": 1,
+      "mean": 0.6310089502980776,
+      "sd": NaN,
+      "params": 93735472.0
+    }
+  ],
+  "mpba_status": "perspective_hypothesis_unsupported"
+}

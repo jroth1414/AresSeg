@@ -13,8 +13,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from marsseg.data.preflight import inspect_data  # noqa: E402
-from marsseg.utils.config import load_yaml  # noqa: E402
+from aresseg.data.preflight import inspect_data  # noqa: E402
+from aresseg.utils.config import load_yaml  # noqa: E402
 
 
 def parse_args(argv=None):

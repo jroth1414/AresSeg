@@ -1,0 +1,18 @@
+\begin{tabular}{lrrr}
+\toprule
+System & Seeds & mIoU (mean $\pm$ SD) & Params \\
+\midrule
+Majority (bedrock) & 1 & 0.056 $\pm$ -- & 0 \\
+Tiny U-Net & 3 & 0.689 $\pm$ 0.014 & 0.1M \\
+U-Net R34 \textperiodcentered{} pretrained & 3 & 0.821 $\pm$ 0.013 & 24.4M \\
+U-Net R34 \textperiodcentered{} scratch & 3 & 0.824 $\pm$ 0.005 & 24.4M \\
+DeepLabV3+ R50 \textperiodcentered{} pretrained & 3 & 0.810 $\pm$ 0.019 & 26.7M \\
+DeepLabV3+ R50 \textperiodcentered{} scratch & 3 & 0.815 $\pm$ 0.011 & 26.7M \\
+SegFormer B0 \textperiodcentered{} pretrained & 3 & 0.814 $\pm$ 0.012 & 3.7M \\
+SegFormer B0 \textperiodcentered{} scratch & 3 & 0.814 $\pm$ 0.020 & 3.7M \\
+SegFormer B2 \textperiodcentered{} pretrained & 3 & 0.815 $\pm$ 0.018 & 27.3M \\
+SegFormer B2 \textperiodcentered{} scratch & 3 & 0.737 $\pm$ 0.056 & 27.3M \\
+DINOv3-SAT ViT-L/16 & 3 & 0.836 $\pm$ 0.018 & 305.5M \\
+SAM region-oracle upper bound & 1 & 0.631 $\pm$ -- & 93.7M \\
+\bottomrule
+\end{tabular}

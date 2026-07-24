@@ -39,6 +39,9 @@ env/
 !/experiments/manifests/**/per_image.csv
 !/experiments/.gitkeep
 
+# MPBA is an isolated experimental result store; never mix its artifacts into Protocol V3 Git data.
+/experiments/mpba/**
+
 # === Model checkpoints / large artifacts / rasters ===
 *.pt
 *.pth

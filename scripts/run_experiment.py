@@ -33,19 +33,19 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import numpy as np  # noqa: E402
 
-from marsseg.data.ai4mars import IGNORE_INDEX, NUM_CLASSES, build_index  # noqa: E402
-from marsseg.data.dataset import SegDataset, class_pixel_counts, make_splits  # noqa: E402
-from marsseg.data.preflight import index_fingerprint  # noqa: E402
-from marsseg.data.transforms import eval_transform  # noqa: E402
-from marsseg.eval import aggregate, metrics  # noqa: E402
-from marsseg.utils.capabilities import detect  # noqa: E402
-from marsseg.utils.config import load_config  # noqa: E402
-from marsseg.utils.logging import get_logger  # noqa: E402
-from marsseg.utils.manifest import _git_sha, config_hash, write_manifest  # noqa: E402
-from marsseg.utils.results import append_results  # noqa: E402
-from marsseg.utils.seed import set_seed  # noqa: E402
+from aresseg.data.ai4mars import IGNORE_INDEX, NUM_CLASSES, build_index  # noqa: E402
+from aresseg.data.dataset import SegDataset, class_pixel_counts, make_splits  # noqa: E402
+from aresseg.data.preflight import index_fingerprint  # noqa: E402
+from aresseg.data.transforms import eval_transform  # noqa: E402
+from aresseg.eval import aggregate, metrics  # noqa: E402
+from aresseg.utils.capabilities import detect  # noqa: E402
+from aresseg.utils.config import load_config  # noqa: E402
+from aresseg.utils.logging import get_logger  # noqa: E402
+from aresseg.utils.manifest import _git_sha, config_hash, write_manifest  # noqa: E402
+from aresseg.utils.results import append_results  # noqa: E402
+from aresseg.utils.seed import set_seed  # noqa: E402
 
-log = get_logger("marsseg.run")
+log = get_logger("aresseg.run")
 
 FOUNDATION_VARIANTS = {"dinov3_sat": "finetuned", "sam": "region_oracle_upper_bound"}
 
@@ -141,6 +141,18 @@ def _runtime_code_fingerprint() -> str:
     return digest.hexdigest()
 
 
+PROTOCOL_V3_TRAINING_GIT_SHAS = frozenset(
+    {
+        "c188b320d700e01c8ffb37330e30f188862ad995",
+        "c2c2860f40626413eb95dd9bfec3d492fdde9035",
+        "3e52372ce7ea6f923dddec95338384a6dd3693bd",
+    }
+)
+PROTOCOL_V3_TRAINING_CODE_FINGERPRINT = (
+    "bebd8b2dae8fb62a087ded6f5334dbf19bfde1a157bad743b17471ba200325d3"
+)
+
+
 def _parameter_counts(model) -> tuple[int, int]:
     params = list(model.parameters())
     return sum(item.numel() for item in params), sum(
@@ -180,6 +192,7 @@ def _matching_complete_run(
     code_fingerprint: str,
     h4: bool = False,
     source_checkpoint: str | None = None,
+    allow_protocol_v3_training: bool = False,
 ) -> Path | None:
     """Return the newest fully materialized matching run, never a marker-file guess."""
     import pandas as pd
@@ -197,10 +210,18 @@ def _matching_complete_run(
         except (OSError, json.JSONDecodeError):
             continue
         run_dir = manifest_path.parent
+        provenance_matches = (
+            manifest.get("git_sha") == git_sha
+            and manifest.get("code_fingerprint") == code_fingerprint
+        )
+        if allow_protocol_v3_training:
+            provenance_matches = provenance_matches or (
+                manifest.get("git_sha") in PROTOCOL_V3_TRAINING_GIT_SHAS
+                and manifest.get("code_fingerprint") == PROTOCOL_V3_TRAINING_CODE_FINGERPRINT
+            )
         if (
             manifest.get("config_hash") != chash
-            or manifest.get("git_sha") != git_sha
-            or manifest.get("code_fingerprint") != code_fingerprint
+            or not provenance_matches
             or manifest.get("profile") != profile
             or manifest.get("model") != model_name
             or manifest.get("evaluation_split") != "gold"
@@ -474,7 +495,7 @@ def main(argv=None) -> int:
         return 0
 
     if model_name == "sam":
-        from marsseg.models.foundation import (
+        from aresseg.models.foundation import (
             build_foundation,
             gating_reasons,
             last_unavailable_reason,
@@ -539,17 +560,17 @@ def main(argv=None) -> int:
 
     # ---------- trainable arms (baseline / unet / deeplabv3plus / segformer / dinov3_sat) ----------
     if model_name == "majority":
-        from marsseg.models.zoo import build_model
+        from aresseg.models.zoo import build_model
 
         majority_counts = class_pixel_counts(index["train"], num_classes=NUM_CLASSES)
         majority_class = int(np.argmax(majority_counts))
-        if majority_class != 0:
-            raise AssertionError(
-                f"constant-soil baseline invalid: class 0 is not the training majority; "
-                f"counts={majority_counts.tolist()}"
-            )
         stages.append("majority_class_evidence")
-        majority_model = build_model("majority", num_classes=NUM_CLASSES, pretrained=False)
+        majority_model = build_model(
+            "majority",
+            num_classes=NUM_CLASSES,
+            pretrained=False,
+            predicted_class=majority_class,
+        )
         parameter_counts = _parameter_counts(majority_model)
         device = "cuda" if profile == "gpu_full" else "cpu"
         per_image_rows: list[dict] = []
@@ -650,7 +671,7 @@ def main(argv=None) -> int:
     from lightning.pytorch.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
     from lightning.pytorch.loggers import CSVLogger
 
-    from marsseg.train.lit import SegDataModule, SegLitModule
+    from aresseg.train.lit import SegDataModule, SegLitModule
 
     weights_source = _weights_source(mcfg)
     class_weights = _class_weights(splits["train"], cfg.get("class_weights", {}))
@@ -672,7 +693,7 @@ def main(argv=None) -> int:
     )
     if lit.model is None:  # gated dinov3_sat on CPU / missing token -> skip-and-log (5.4)
         if model_name == "dinov3_sat":
-            from marsseg.models.foundation import gating_reasons, last_unavailable_reason
+            from aresseg.models.foundation import gating_reasons, last_unavailable_reason
 
             reasons = gating_reasons("dinov3_sat")
             return _skip(

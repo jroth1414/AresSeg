@@ -17,11 +17,11 @@ import cv2
 import numpy as np
 import pytest
 
-from marsseg.data import ai4mars
-from marsseg.data.ai4mars import build_index, label_key
-from marsseg.data.dataset import SegDataset, class_pixel_counts, make_splits
-from marsseg.data.preflight import inspect_data
-from marsseg.data.transforms import eval_transform, train_transform
+from aresseg.data import ai4mars
+from aresseg.data.ai4mars import build_index, label_key
+from aresseg.data.dataset import SegDataset, class_pixel_counts, make_splits
+from aresseg.data.preflight import inspect_data
+from aresseg.data.transforms import eval_transform, train_transform
 
 DATA_ROOT = Path(__file__).resolve().parents[1] / "data" / "raw" / "ai4mars"
 requires_data = pytest.mark.skipif(
