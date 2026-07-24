@@ -141,6 +141,18 @@ def _runtime_code_fingerprint() -> str:
     return digest.hexdigest()
 
 
+PROTOCOL_V3_TRAINING_GIT_SHAS = frozenset(
+    {
+        "c188b320d700e01c8ffb37330e30f188862ad995",
+        "c2c2860f40626413eb95dd9bfec3d492fdde9035",
+        "3e52372ce7ea6f923dddec95338384a6dd3693bd",
+    }
+)
+PROTOCOL_V3_TRAINING_CODE_FINGERPRINT = (
+    "bebd8b2dae8fb62a087ded6f5334dbf19bfde1a157bad743b17471ba200325d3"
+)
+
+
 def _parameter_counts(model) -> tuple[int, int]:
     params = list(model.parameters())
     return sum(item.numel() for item in params), sum(
@@ -180,6 +192,7 @@ def _matching_complete_run(
     code_fingerprint: str,
     h4: bool = False,
     source_checkpoint: str | None = None,
+    allow_protocol_v3_training: bool = False,
 ) -> Path | None:
     """Return the newest fully materialized matching run, never a marker-file guess."""
     import pandas as pd
@@ -197,10 +210,18 @@ def _matching_complete_run(
         except (OSError, json.JSONDecodeError):
             continue
         run_dir = manifest_path.parent
+        provenance_matches = (
+            manifest.get("git_sha") == git_sha
+            and manifest.get("code_fingerprint") == code_fingerprint
+        )
+        if allow_protocol_v3_training:
+            provenance_matches = provenance_matches or (
+                manifest.get("git_sha") in PROTOCOL_V3_TRAINING_GIT_SHAS
+                and manifest.get("code_fingerprint") == PROTOCOL_V3_TRAINING_CODE_FINGERPRINT
+            )
         if (
             manifest.get("config_hash") != chash
-            or manifest.get("git_sha") != git_sha
-            or manifest.get("code_fingerprint") != code_fingerprint
+            or not provenance_matches
             or manifest.get("profile") != profile
             or manifest.get("model") != model_name
             or manifest.get("evaluation_split") != "gold"

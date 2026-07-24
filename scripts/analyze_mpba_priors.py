@@ -26,15 +26,15 @@ from scipy.stats import pearsonr, spearmanr
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from marsseg.data.ai4mars import CLASSES, IGNORE_INDEX, build_index  # noqa: E402
-from marsseg.data.dataset import make_splits  # noqa: E402
-from marsseg.experimental.mpba.data import (  # noqa: E402
+from aresseg.data.ai4mars import CLASSES, IGNORE_INDEX, build_index  # noqa: E402
+from aresseg.data.dataset import make_splits  # noqa: E402
+from aresseg.experimental.mpba.data import (  # noqa: E402
     apply_matched_range_cohort,
     attach_range_masks,
     cutoff_target_from_mask,
     read_range_mask,
 )
-from marsseg.utils.config import load_yaml  # noqa: E402
+from aresseg.utils.config import load_yaml  # noqa: E402
 
 
 def parse_args(argv=None):

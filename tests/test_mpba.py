@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import torch
 
-from marsseg.experimental.mpba.data import (
+from aresseg.experimental.mpba.data import (
     MATCHED_COHORT_EXCLUDED_PRODUCTS,
     RangeAwareSegDataset,
     apply_matched_range_cohort,
@@ -19,14 +19,14 @@ from marsseg.experimental.mpba.data import (
     cutoff_target_from_mask,
     resolve_range_mask_path,
 )
-from marsseg.experimental.mpba.lit import MPBALitModule, cutoff_smooth_l1
-from marsseg.experimental.mpba.metrics import (
+from aresseg.experimental.mpba.lit import MPBALitModule, cutoff_smooth_l1
+from aresseg.experimental.mpba.metrics import (
     MPBAValidationAccumulator,
     routing_utilization,
     small_big_rock_component_counts,
 )
-from marsseg.experimental.mpba.model import MarsPerspectiveScaleAdapter
-from marsseg.models.zoo import build_model
+from aresseg.experimental.mpba.model import MarsPerspectiveScaleAdapter
+from aresseg.models.zoo import build_model
 
 
 def _mpba(
@@ -211,7 +211,7 @@ def test_range_mask_resolution_targets_and_dataset(tmp_path):
     assert cutoff_target_from_mask(np.zeros_like(mask)) == 0.0
     assert cutoff_target_from_mask(np.ones_like(mask)) == 1.0
 
-    from marsseg.data.transforms import eval_transform
+    from aresseg.data.transforms import eval_transform
 
     dataset = RangeAwareSegDataset([record], eval_transform(16), return_range_mask=True)
     item = dataset[0]

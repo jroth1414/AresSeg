@@ -96,7 +96,7 @@ def _unwrap_segformer(model: nn.Module) -> nn.Module:
     candidate = getattr(model, "model", model)
     if not hasattr(candidate, "segformer") or not hasattr(candidate, "decode_head"):
         raise TypeError(
-            "SegFormer adapter expects the marsseg wrapper or a "
+            "SegFormer adapter expects the aresseg wrapper or a "
             "SegformerForSemanticSegmentation-like module"
         )
     return candidate

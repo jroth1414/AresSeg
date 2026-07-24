@@ -245,6 +245,7 @@ for key, cfg_name in CONFIGS.items():
             model_name=key[0],
             git_sha=git_sha,
             code_fingerprint=code_fingerprint,
+            allow_protocol_v3_training=True,
         )
         if run is None:
             missing.append(f"{cfg_name}:seed{seed}")

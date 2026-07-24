@@ -373,6 +373,52 @@ def test_h4_resume_requires_matching_source_checkpoint(monkeypatch, tmp_path):
         runner._matching_complete_run(config, source_checkpoint=checkpoint, **common)
 
 
+def test_training_resume_allows_only_pinned_protocol_v3_provenance(monkeypatch, tmp_path):
+    import json
+
+    from scripts import run_experiment as runner
+
+    monkeypatch.setattr(runner, "REPO_ROOT", tmp_path)
+    experiments = tmp_path / "experiments"
+    run_dir = experiments / "legacy_training"
+    run_dir.mkdir(parents=True)
+    config = {"model": {"name": "unet"}}
+    config_hash = runner.config_hash(config)
+    legacy_sha = next(iter(runner.PROTOCOL_V3_TRAINING_GIT_SHAS))
+    manifest = {
+        "run_id": run_dir.name,
+        "timestamp_utc": "2026-07-10T00:00:00Z",
+        "config_hash": config_hash,
+        "git_sha": legacy_sha,
+        "code_fingerprint": runner.PROTOCOL_V3_TRAINING_CODE_FINGERPRINT,
+        "profile": "gpu_full",
+        "model": "unet",
+        "evaluation_split": "gold",
+        "stages_completed": ["train", "eval_test_msl"],
+    }
+    (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (run_dir / "per_image.parquet").write_bytes(b"present")
+    (run_dir / "per_image.csv").write_text("present\n", encoding="utf-8")
+    (run_dir / "best.ckpt").write_bytes(b"present")
+    (run_dir / "training_metrics.csv").write_text("present\n", encoding="utf-8")
+    (experiments / "results_store.csv").write_text(
+        f"run_id,config_hash,status\n{run_dir.name},{config_hash},ok\n", encoding="utf-8"
+    )
+    common = {
+        "profile": "gpu_full",
+        "model_name": "unet",
+        "git_sha": "current",
+        "code_fingerprint": "current-code",
+    }
+    assert runner._matching_complete_run(config, **common) is None
+    assert (
+        runner._matching_complete_run(config, allow_protocol_v3_training=True, **common) == run_dir
+    )
+    manifest["code_fingerprint"] = "unrecognized"
+    (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert runner._matching_complete_run(config, allow_protocol_v3_training=True, **common) is None
+
+
 # --------------------------------------------------------------------------------------
 
 

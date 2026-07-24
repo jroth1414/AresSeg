@@ -542,7 +542,7 @@ def test_prereg_freeze_verify_tamper(tmp_path):
 
 
 def _protocol_fixture_root(tmp_path: Path) -> Path:
-    """Copy only inputs bound by Protocol V3, keeping mutation tests isolated from the repo."""
+    """Copy only inputs bound by Protocol V4, keeping mutation tests isolated from the repo."""
     root = tmp_path / "repo"
     for relative in prereg.RESULT_DRIVING_CODE_PATHS:
         destination = root / relative
@@ -559,6 +559,9 @@ def _protocol_fixture_root(tmp_path: Path) -> Path:
         prereg.V2_PROTOCOL_PATH,
         prereg.V2_PROTOCOL_SHA_PATH,
         prereg.V3_AMENDMENT_PATH,
+        prereg.V3_PROTOCOL_PATH,
+        prereg.V3_PROTOCOL_SHA_PATH,
+        prereg.V4_AMENDMENT_PATH,
     ):
         destination = root / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -625,6 +628,24 @@ def test_protocol_v3_amendment_records_narrow_pre_result_change():
         assert required in normalized
 
 
+def test_protocol_v4_amendment_pins_administrative_reuse_boundary():
+    text = (REPO / prereg.V4_AMENDMENT_PATH).read_text(encoding="utf-8")
+    normalized = " ".join(text.split())
+    for required in (
+        "after all preregistered MSL training runs completed",
+        "before H4 MER evaluation",
+        "all 30 learned runs",
+        "c188b320d700e01c8ffb37330e30f188862ad995",
+        "c2c2860f40626413eb95dd9bfec3d492fdde9035",
+        "3e52372ce7ea6f923dddec95338384a6dd3693bd",
+        "bebd8b2dae8fb62a087ded6f5334dbf19bfde1a157bad743b17471ba200325d3",
+        "applies only while resolving",
+        "outside H0--H5",
+        "does not change the research hypotheses",
+    ):
+        assert required in normalized
+
+
 def _seal_test_protocol(tmp_path: Path):
     root = _protocol_fixture_root(tmp_path)
     hyp = yaml.safe_load((REPO / "configs" / "hypotheses.yaml").read_text(encoding="utf-8"))
@@ -635,7 +656,7 @@ def _seal_test_protocol(tmp_path: Path):
         json.loads(path.read_text(encoding="utf-8"))
     )
     payload = json.loads(path.read_text(encoding="utf-8"))
-    assert payload["schema"] == prereg.PROTOCOL_V3_SCHEMA
+    assert payload["schema"] == prereg.PROTOCOL_V4_SCHEMA
     assert set(payload["historical_artifact_sha256"]) == {
         prereg.PREREG_PATH.as_posix(),
         prereg.SHA_PATH.as_posix(),
@@ -643,12 +664,15 @@ def _seal_test_protocol(tmp_path: Path):
         prereg.V2_PROTOCOL_PATH.as_posix(),
         prereg.V2_PROTOCOL_SHA_PATH.as_posix(),
         prereg.V3_AMENDMENT_PATH.as_posix(),
+        prereg.V3_PROTOCOL_PATH.as_posix(),
+        prereg.V3_PROTOCOL_SHA_PATH.as_posix(),
+        prereg.V4_AMENDMENT_PATH.as_posix(),
     }
     return root, hyp, data
 
 
 @pytest.mark.parametrize("mutation", ["alpha", "h4_threshold", "comparison_selector"])
-def test_protocol_v3_rejects_decision_config_mutations(tmp_path, mutation):
+def test_protocol_v4_rejects_decision_config_mutations(tmp_path, mutation):
     root, hyp, data = _seal_test_protocol(tmp_path)
     changed = deepcopy(hyp)
     if mutation == "alpha":
@@ -675,7 +699,7 @@ def test_protocol_v3_rejects_decision_config_mutations(tmp_path, mutation):
         Path("scripts/run_gpu.sh"),
     ],
 )
-def test_protocol_v3_rejects_result_driving_code_mutation(tmp_path, relative):
+def test_protocol_v4_rejects_result_driving_code_mutation(tmp_path, relative):
     root, hyp, data = _seal_test_protocol(tmp_path)
     target = root / relative
     target.write_text(
@@ -685,7 +709,7 @@ def test_protocol_v3_rejects_result_driving_code_mutation(tmp_path, relative):
         prereg.verify_protocol(hyp, data, repo_root=root)
 
 
-def test_protocol_v3_rejects_model_config_mutation(tmp_path):
+def test_protocol_v4_rejects_model_config_mutation(tmp_path):
     root, hyp, data = _seal_test_protocol(tmp_path)
     target = next((root / "configs" / "models").glob("*.yaml"))
     target.write_text(target.read_text(encoding="utf-8") + "\n# drift\n", encoding="utf-8")
@@ -693,16 +717,16 @@ def test_protocol_v3_rejects_model_config_mutation(tmp_path):
         prereg.verify_protocol(hyp, data, repo_root=root)
 
 
-def test_protocol_v3_absence_and_partial_seal_fail_closed(tmp_path):
+def test_protocol_v4_absence_and_partial_seal_fail_closed(tmp_path):
     root = _protocol_fixture_root(tmp_path)
     hyp = yaml.safe_load((REPO / "configs" / "hypotheses.yaml").read_text(encoding="utf-8"))
     data = yaml.safe_load((REPO / "configs" / "data.yaml").read_text(encoding="utf-8"))
-    with pytest.raises(RuntimeError, match="Protocol V3 snapshot missing"):
+    with pytest.raises(RuntimeError, match="Protocol V4 snapshot missing"):
         prereg.verify_protocol(hyp, data, repo_root=root)
     sidecar = root / prereg.PROTOCOL_SHA_PATH
     sidecar.parent.mkdir(parents=True, exist_ok=True)
     sidecar.write_text("0" * 64 + "\n", encoding="utf-8")
-    with pytest.raises(RuntimeError, match="partial Protocol V3 seal"):
+    with pytest.raises(RuntimeError, match="partial Protocol V4 seal"):
         prereg.seal_protocol(hyp, data, repo_root=root)
 
 
@@ -715,9 +739,12 @@ def test_protocol_v3_absence_and_partial_seal_fail_closed(tmp_path):
         prereg.V2_PROTOCOL_PATH,
         prereg.V2_PROTOCOL_SHA_PATH,
         prereg.V3_AMENDMENT_PATH,
+        prereg.V3_PROTOCOL_PATH,
+        prereg.V3_PROTOCOL_SHA_PATH,
+        prereg.V4_AMENDMENT_PATH,
     ],
 )
-def test_protocol_v3_rejects_missing_historical_artifact(tmp_path, relative):
+def test_protocol_v4_rejects_missing_historical_artifact(tmp_path, relative):
     root = _protocol_fixture_root(tmp_path)
     (root / relative).unlink()
     hyp = yaml.safe_load((REPO / "configs" / "hypotheses.yaml").read_text(encoding="utf-8"))
@@ -735,9 +762,12 @@ def test_protocol_v3_rejects_missing_historical_artifact(tmp_path, relative):
         prereg.V2_PROTOCOL_PATH,
         prereg.V2_PROTOCOL_SHA_PATH,
         prereg.V3_AMENDMENT_PATH,
+        prereg.V3_PROTOCOL_PATH,
+        prereg.V3_PROTOCOL_SHA_PATH,
+        prereg.V4_AMENDMENT_PATH,
     ],
 )
-def test_protocol_v3_rejects_historical_artifact_drift(tmp_path, relative):
+def test_protocol_v4_rejects_historical_artifact_drift(tmp_path, relative):
     root, hyp, data = _seal_test_protocol(tmp_path)
     target = root / relative
     target.write_bytes(target.read_bytes() + b"\npost-seal drift\n")
@@ -745,7 +775,7 @@ def test_protocol_v3_rejects_historical_artifact_drift(tmp_path, relative):
         prereg.verify_protocol(hyp, data, repo_root=root)
 
 
-def test_protocol_v3_rejects_noncanonical_snapshot_even_with_matching_sidecar(tmp_path):
+def test_protocol_v4_rejects_noncanonical_snapshot_even_with_matching_sidecar(tmp_path):
     root, hyp, data = _seal_test_protocol(tmp_path)
     snapshot = root / prereg.PROTOCOL_PATH
     sidecar = root / prereg.PROTOCOL_SHA_PATH

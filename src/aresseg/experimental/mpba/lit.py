@@ -18,8 +18,8 @@ import torch.nn.functional as F
 from torch import nn
 from torchmetrics.classification import MulticlassJaccardIndex
 
-from marsseg.data.ai4mars import CLASSES
-from marsseg.train.loss import CombinedLoss
+from aresseg.data.ai4mars import CLASSES
+from aresseg.train.loss import CombinedLoss
 
 
 def seed_dataloader_worker(_worker_id: int) -> None:
@@ -298,12 +298,12 @@ class MPBADataModule(L.LightningDataModule):
         self.use_range_cutoff = bool(use_range_cutoff)
 
     def setup(self, stage: str | None = None) -> None:
-        from marsseg.data.dataset import SegDataset
-        from marsseg.data.transforms import eval_transform, train_transform
+        from aresseg.data.dataset import SegDataset
+        from aresseg.data.transforms import eval_transform, train_transform
 
         dataset_type = SegDataset
         if self.use_range_cutoff:
-            from marsseg.experimental.mpba.data import RangeAwareSegDataset
+            from aresseg.experimental.mpba.data import RangeAwareSegDataset
 
             dataset_type = RangeAwareSegDataset
         self.train_ds = dataset_type(

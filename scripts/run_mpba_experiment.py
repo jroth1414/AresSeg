@@ -46,42 +46,42 @@ from lightning.pytorch.callbacks import (  # noqa: E402
 from lightning.pytorch.loggers import CSVLogger  # noqa: E402
 from torch.utils.data import DataLoader  # noqa: E402
 
-from marsseg.data.ai4mars import IGNORE_INDEX, NUM_CLASSES, build_index  # noqa: E402
-from marsseg.data.dataset import SegDataset, class_pixel_counts, make_splits  # noqa: E402
-from marsseg.data.preflight import index_fingerprint  # noqa: E402
-from marsseg.data.transforms import eval_transform  # noqa: E402
-from marsseg.eval import aggregate, metrics  # noqa: E402
-from marsseg.experimental.mpba import build_mpba_model  # noqa: E402
-from marsseg.experimental.mpba.data import (  # noqa: E402
+from aresseg.data.ai4mars import IGNORE_INDEX, NUM_CLASSES, build_index  # noqa: E402
+from aresseg.data.dataset import SegDataset, class_pixel_counts, make_splits  # noqa: E402
+from aresseg.data.preflight import index_fingerprint  # noqa: E402
+from aresseg.data.transforms import eval_transform  # noqa: E402
+from aresseg.eval import aggregate, metrics  # noqa: E402
+from aresseg.experimental.mpba import build_mpba_model  # noqa: E402
+from aresseg.experimental.mpba.data import (  # noqa: E402
     MATCHED_COHORT_EXCLUDED_PRODUCTS,
     RangeAwareSegDataset,
     apply_matched_range_cohort,
     attach_range_masks,
 )
-from marsseg.experimental.mpba.lit import (  # noqa: E402
+from aresseg.experimental.mpba.lit import (  # noqa: E402
     MPBADataModule,
     MPBALitModule,
     final_logits,
     output_field,
 )
-from marsseg.experimental.mpba.metrics import (  # noqa: E402
+from aresseg.experimental.mpba.metrics import (  # noqa: E402
     MPBAValidationAccumulator,
     profile_forward_latency,
 )
-from marsseg.models.zoo import build_model  # noqa: E402
-from marsseg.utils.capabilities import detect  # noqa: E402
-from marsseg.utils.config import load_config  # noqa: E402
-from marsseg.utils.logging import get_logger  # noqa: E402
-from marsseg.utils.manifest import (  # noqa: E402
+from aresseg.models.zoo import build_model  # noqa: E402
+from aresseg.utils.capabilities import detect  # noqa: E402
+from aresseg.utils.config import load_config  # noqa: E402
+from aresseg.utils.logging import get_logger  # noqa: E402
+from aresseg.utils.manifest import (  # noqa: E402
     _git_dirty,
     _git_sha,
     config_hash,
     write_manifest,
 )
-from marsseg.utils.results import append_results  # noqa: E402
-from marsseg.utils.seed import set_seed  # noqa: E402
+from aresseg.utils.results import append_results  # noqa: E402
+from aresseg.utils.seed import set_seed  # noqa: E402
 
-log = get_logger("marsseg.mpba.run")
+log = get_logger("aresseg.mpba.run")
 
 MPBA_ROOT = REPO_ROOT / "experiments" / "mpba"
 MPBA_PROTOCOL_ROOT = MPBA_ROOT / "protocol"
@@ -180,7 +180,7 @@ def _require_exact(label: str, actual: Any, expected: Any) -> None:
 def _runtime_code_fingerprint() -> str:
     """Hash the additive runner/model/data/metric implementation used by a screen."""
     paths = [Path(__file__).resolve()]
-    paths.extend(sorted((REPO_ROOT / "src" / "marsseg" / "experimental" / "mpba").glob("*.py")))
+    paths.extend(sorted((REPO_ROOT / "src" / "aresseg" / "experimental" / "mpba").glob("*.py")))
     digest = hashlib.sha256()
     for path in paths:
         digest.update(path.relative_to(REPO_ROOT).as_posix().encode("utf-8"))

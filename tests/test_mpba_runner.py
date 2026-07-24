@@ -9,7 +9,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
-    "marsseg_mpba_runner", REPO_ROOT / "scripts" / "run_mpba_experiment.py"
+    "aresseg_mpba_runner", REPO_ROOT / "scripts" / "run_mpba_experiment.py"
 )
 assert SPEC is not None and SPEC.loader is not None
 runner = importlib.util.module_from_spec(SPEC)
