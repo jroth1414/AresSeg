@@ -1,0 +1,13 @@
+model:
+  name: segformer
+  backbone: b0
+  results_backbone: mit-b0
+  pretrained: true
+  revision: 25ce79d97e6d9d509ed12e17cb2eb89b0a83a2dc
+  weights_filename: model.safetensors
+  weights_sha256: 3e5ad9cd1dd8ecf8305c23fcdf01ef241f08c7b2dddacb6ec7de5a887188798a
+mpba:
+  enabled: true
+  variant: range_cutoff
+  router_mode: content
+  coordinate_mode: range_cutoff

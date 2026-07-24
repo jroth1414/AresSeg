@@ -1,0 +1,10 @@
+model:
+  name: unet
+  backbone: resnet34
+  results_backbone: resnet34
+  pretrained: true
+mpba:
+  enabled: true
+  variant: static
+  router_mode: static
+  coordinate_mode: none
