@@ -1,0 +1,199 @@
+{
+  "timestamp_utc": "2026-07-17T12:34:15.607899+00:00",
+  "status": "perspective_hypothesis_unsupported",
+  "selected_variant": null,
+  "candidates": {
+    "raw_y": {
+      "passed": false,
+      "mean_miou_gain_over_native": 0.0070928188384804525,
+      "by_backbone": {
+        "mit-b0": {
+          "passed": false,
+          "checks": {
+            "miou_over_native": true,
+            "miou_over_content": false,
+            "big_rock_iou": true,
+            "other_classes": true,
+            "latency": false,
+            "routing_utilization": true
+          }
+        },
+        "resnet34": {
+          "passed": false,
+          "checks": {
+            "miou_over_native": true,
+            "miou_over_content": false,
+            "big_rock_iou": false,
+            "other_classes": true,
+            "latency": false,
+            "routing_utilization": true
+          }
+        }
+      }
+    },
+    "range_cutoff": {
+      "passed": false,
+      "mean_miou_gain_over_native": 0.0041085307918343195,
+      "by_backbone": {
+        "mit-b0": {
+          "passed": false,
+          "checks": {
+            "miou_over_native": false,
+            "miou_over_content": false,
+            "big_rock_iou": false,
+            "other_classes": true,
+            "latency": false,
+            "routing_utilization": true,
+            "cutoff_mae": true
+          }
+        },
+        "resnet34": {
+          "passed": false,
+          "checks": {
+            "miou_over_native": true,
+            "miou_over_content": true,
+            "big_rock_iou": true,
+            "other_classes": false,
+            "latency": false,
+            "routing_utilization": true,
+            "cutoff_mae": true
+          }
+        }
+      }
+    }
+  },
+  "thresholds": {
+    "miou_gain_min": 0.003,
+    "big_rock_iou_gain_min": 0.01,
+    "max_other_class_drop": 0.005,
+    "max_median_latency_increase": 0.15,
+    "routing_scale_usage_min": 0.1,
+    "routing_scales_required": 2,
+    "range_cutoff_mae_max": 0.05,
+    "raw_y_tie_margin": 0.001
+  },
+  "screen_protocol_signature": "62dd0a733fa17b4849ba20222328a465b594aac03383bd9fbec66a920d9c18c1",
+  "screen_protocol": {
+    "version": "mpba-perspective-first-seed1414-v1",
+    "git_sha": "871b4d1cb9a55ced0225f9750747d33790d23c8c",
+    "runtime_code_sha256": "1bb178be8420293fcb181c5561fb879eacc5a4dd8804c2cfb11d0a08ff0d3a9c",
+    "matched_train_validation_sha256": "e855b849267c8ce700a059f500d991e38e9e52b4b1e55a809b4ae7762ff457a3",
+    "gpu": {
+      "uuid": "GPU-112b921c-cf43-ae8c-dc9c-d6a884eb0ed2",
+      "name": "Tesla V100-SXM2-32GB"
+    },
+    "experiment": {
+      "family": "mpba_perspective_first",
+      "phase": "seed1414_validation_screen"
+    },
+    "data": {
+      "root": "data/raw/ai4mars/ai4mars-dataset-merged-0.6",
+      "rover": "msl",
+      "camera": "ncam",
+      "val_frac": 0.2,
+      "size": 512,
+      "seed": 1414,
+      "split_by": "image",
+      "split_seed": 1414,
+      "test_gold_dir": "msl/ncam/labels/test/masked-gold-min3-100agree",
+      "expected_train_n": 16064,
+      "expected_test_n": 322,
+      "max_train_images": null
+    },
+    "class_weights": {
+      "method": "inverse_freq_normalized",
+      "formula": "w_c = median(counts)/counts_c",
+      "clip": [
+        0.5,
+        10.0
+      ],
+      "computed_on": "train_split",
+      "max_images": null
+    },
+    "augmentation": {
+      "hflip_p": 0.5,
+      "brightness_limit": 0.2,
+      "contrast_limit": 0.2,
+      "rbc_p": 0.3,
+      "vflip": false,
+      "vflip_p": 0.5,
+      "scale_crop": false,
+      "scale_limit": 0.1,
+      "scale_crop_p": 0.3
+    },
+    "training": {
+      "batch_size": 8,
+      "num_workers": 8,
+      "max_epochs": 50,
+      "lr": 0.0003,
+      "weight_decay": 0.0001,
+      "dice_weight": 1.0,
+      "ignore_index": 255,
+      "early_stop_patience": 10,
+      "grad_clip": 1.0
+    },
+    "evaluation": {
+      "split": "validation",
+      "boundary_tolerance_px": 3,
+      "big_rock_class": 3,
+      "small_component_min_pixels": 16,
+      "small_component_max_pixels": 256,
+      "small_component_coverage": 0.5
+    },
+    "profiling": {
+      "batch_size": 1,
+      "image_size": 512,
+      "precision": "fp16",
+      "warmup_iterations": 50,
+      "measured_iterations": 200,
+      "required_gpu_substring": "V100"
+    },
+    "promotion": {
+      "miou_gain_min": 0.003,
+      "big_rock_iou_gain_min": 0.01,
+      "max_other_class_drop": 0.005,
+      "max_median_latency_increase": 0.15,
+      "routing_scale_usage_min": 0.1,
+      "routing_scales_required": 2,
+      "range_cutoff_mae_max": 0.05,
+      "raw_y_tie_margin": 0.001
+    },
+    "adapter_shared": {
+      "projection_channels": 128,
+      "num_scales": 4,
+      "cutoff_loss_weight": 0.1,
+      "range_mask_dir": null,
+      "strict_range_masks": true,
+      "matched_cohort_exclusions": [
+        "NLB_432655207EDR_F0160148NCAM00394M1.JPG"
+      ]
+    },
+    "model_families": {
+      "unet": {
+        "backbone": "resnet34",
+        "pretrained": true
+      },
+      "segformer": {
+        "backbone": "b0",
+        "results_backbone": "mit-b0",
+        "pretrained": true,
+        "revision": "25ce79d97e6d9d509ed12e17cb2eb89b0a83a2dc",
+        "weights_sha256": "3e5ad9cd1dd8ecf8305c23fcdf01ef241f08c7b2dddacb6ec7de5a887188798a"
+      }
+    }
+  },
+  "run_ids": {
+    "mit-b0/content": "segformer__mit-b0__content__validation__seed1414__9e58cfd3__20260716T093126451090Z",
+    "mit-b0/native": "segformer__mit-b0__native__validation__seed1414__6e80d7f3__20260715T190636759231Z",
+    "mit-b0/range_cutoff": "segformer__mit-b0__range_cutoff__validation__seed1414__d0632cae__20260717T060838608199Z",
+    "mit-b0/raw_y": "segformer__mit-b0__raw_y__validation__seed1414__e26f654d__20260716T194643147139Z",
+    "mit-b0/static": "segformer__mit-b0__static__validation__seed1414__9b9ad161__20260715T224528995182Z",
+    "resnet34/content": "unet__resnet34__content__validation__seed1414__5e539756__20260715T100032075189Z",
+    "resnet34/native": "unet__resnet34__native__validation__seed1414__92b57752__20260715T052838809115Z",
+    "resnet34/range_cutoff": "unet__resnet34__range_cutoff__validation__seed1414__fac64770__20260715T153943544939Z",
+    "resnet34/raw_y": "unet__resnet34__raw_y__validation__seed1414__c24f78f3__20260715T124944876098Z",
+    "resnet34/static": "unet__resnet34__static__validation__seed1414__6efd36ea__20260715T071214339078Z"
+  },
+  "seed": 1414,
+  "gold_evaluated": false
+}

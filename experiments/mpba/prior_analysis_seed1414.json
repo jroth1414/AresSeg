@@ -1,0 +1,543 @@
+{
+  "analysis": "mpba_perspective_priors",
+  "scope": "msl_ncam_training_partition_only",
+  "gold_evaluated": false,
+  "validation_labels_evaluated": false,
+  "split_seed": 1414,
+  "val_frac": 0.2,
+  "indexed_training_pool_n": 16064,
+  "validation_records_excluded_n": 3213,
+  "matched_cohort_exclusions": [
+    {
+      "image": "NLB_432655207EDR_F0160148NCAM00394M1.JPG",
+      "record_name": "msl_ncam_nlb_432655207edr_f0160148ncam00394m1",
+      "split": "train",
+      "reason": "missing_rng_30m_partner_in_source_snapshot"
+    }
+  ],
+  "matched_cohort_excluded_n": 1,
+  "analyzed_records_n": 12850,
+  "max_images": null,
+  "record_fingerprint_sha256": "dfa2fc38fa632ebe084d5c59be23c02cefc830bd13bda552e61f6ab13f617ff5",
+  "vertical_class_distribution": {
+    "n_bins": 16,
+    "class_pixel_totals": {
+      "soil": 2770965719,
+      "bedrock": 3740641851,
+      "sand": 917205915,
+      "big_rock": 65814992
+    },
+    "bins": [
+      {
+        "bin": 0,
+        "y_start": 0.0,
+        "y_stop": 0.0625,
+        "valid_pixels": 258339995,
+        "class_pixels": {
+          "soil": 92884767,
+          "bedrock": 129515901,
+          "sand": 32522020,
+          "big_rock": 3417307
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3595446651611184,
+          "bedrock": 0.5013389467627728,
+          "sand": 0.1258884440250918,
+          "big_rock": 0.013227944051016955
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.033520720362257214,
+          "bedrock": 0.03462397795858912,
+          "sand": 0.035457708534293524,
+          "big_rock": 0.051922926618299975
+        }
+      },
+      {
+        "bin": 1,
+        "y_start": 0.0625,
+        "y_stop": 0.125,
+        "valid_pixels": 329340695,
+        "class_pixels": {
+          "soil": 113492496,
+          "bedrock": 167769013,
+          "sand": 42035040,
+          "big_rock": 6044146
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3446051390642751,
+          "bedrock": 0.5094086930253183,
+          "sand": 0.12763390810236797,
+          "big_rock": 0.018352259808038604
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.040957740913863686,
+          "bedrock": 0.04485032774660041,
+          "sand": 0.0458294471421938,
+          "big_rock": 0.09183539823267015
+        }
+      },
+      {
+        "bin": 2,
+        "y_start": 0.125,
+        "y_stop": 0.1875,
+        "valid_pixels": 382571188,
+        "class_pixels": {
+          "soil": 132836739,
+          "bedrock": 195782757,
+          "sand": 46917861,
+          "big_rock": 7033831
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3472209700224472,
+          "bedrock": 0.5117551011185923,
+          "sand": 0.12263825000851868,
+          "big_rock": 0.018385678850441817
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.047938788303717735,
+          "bedrock": 0.05233934837885125,
+          "sand": 0.051153029251888325,
+          "big_rock": 0.10687277755803723
+        }
+      },
+      {
+        "bin": 3,
+        "y_start": 0.1875,
+        "y_stop": 0.25,
+        "valid_pixels": 459882601,
+        "class_pixels": {
+          "soil": 170695809,
+          "bedrock": 227070034,
+          "sand": 54900682,
+          "big_rock": 7216076
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.37117257454147523,
+          "bedrock": 0.4937565228739758,
+          "sand": 0.11937977623119514,
+          "big_rock": 0.01569112635335382
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.061601559279340905,
+          "bedrock": 0.06070349502700893,
+          "sand": 0.059856441287777784,
+          "big_rock": 0.10964182750337491
+        }
+      },
+      {
+        "bin": 4,
+        "y_start": 0.25,
+        "y_stop": 0.3125,
+        "valid_pixels": 535589751,
+        "class_pixels": {
+          "soil": 207010821,
+          "bedrock": 258959666,
+          "sand": 62860300,
+          "big_rock": 6758964
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3865100491812809,
+          "bedrock": 0.4835037741414884,
+          "sand": 0.1173665102489984,
+          "big_rock": 0.012619666428232305
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07470710286329602,
+          "bedrock": 0.06922867152619044,
+          "sand": 0.06853455584180353,
+          "big_rock": 0.10269641907728258
+        }
+      },
+      {
+        "bin": 5,
+        "y_start": 0.3125,
+        "y_stop": 0.375,
+        "valid_pixels": 580094860,
+        "class_pixels": {
+          "soil": 220254823,
+          "bedrock": 285656948,
+          "sand": 68275061,
+          "big_rock": 5908028
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.379687596266583,
+          "bedrock": 0.49243144129910066,
+          "sand": 0.11769637296906924,
+          "big_rock": 0.010184589465247114
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07948666469951374,
+          "bedrock": 0.07636575736958999,
+          "sand": 0.07443809496147874,
+          "big_rock": 0.08976720683943865
+        }
+      },
+      {
+        "bin": 6,
+        "y_start": 0.375,
+        "y_stop": 0.4375,
+        "valid_pixels": 592075803,
+        "class_pixels": {
+          "soil": 220412121,
+          "bedrock": 296755649,
+          "sand": 69289805,
+          "big_rock": 5618228
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.37227010440756014,
+          "bedrock": 0.5012122560934988,
+          "sand": 0.11702860452819418,
+          "big_rock": 0.009489034970746811
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07954343119031564,
+          "bedrock": 0.07933281528159858,
+          "sand": 0.0755444375868422,
+          "big_rock": 0.08536395476580777
+        }
+      },
+      {
+        "bin": 7,
+        "y_start": 0.4375,
+        "y_stop": 0.5,
+        "valid_pixels": 585587034,
+        "class_pixels": {
+          "soil": 214626871,
+          "bedrock": 296971881,
+          "sand": 68744806,
+          "big_rock": 5243476
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3665157500737969,
+          "bedrock": 0.5071353424126532,
+          "sand": 0.11739468603056535,
+          "big_rock": 0.008954221482984543
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07745562116786332,
+          "bedrock": 0.0793906214038132,
+          "sand": 0.0749502427707305,
+          "big_rock": 0.07966993295387774
+        }
+      },
+      {
+        "bin": 8,
+        "y_start": 0.5,
+        "y_stop": 0.5625,
+        "valid_pixels": 579920295,
+        "class_pixels": {
+          "soil": 209703072,
+          "bedrock": 296503095,
+          "sand": 68849000,
+          "big_rock": 4865128
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.36160671355707596,
+          "bedrock": 0.5112824944331359,
+          "sand": 0.11872148740716171,
+          "big_rock": 0.00838930460262647
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07567869590089288,
+          "bedrock": 0.0792652990611049,
+          "sand": 0.07506384212535307,
+          "big_rock": 0.07392127313485049
+        }
+      },
+      {
+        "bin": 9,
+        "y_start": 0.5625,
+        "y_stop": 0.625,
+        "valid_pixels": 567394602,
+        "class_pixels": {
+          "soil": 204157623,
+          "bedrock": 290909553,
+          "sand": 68274026,
+          "big_rock": 4053400
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.35981594163985364,
+          "bedrock": 0.5127111748588683,
+          "sand": 0.12032900164954337,
+          "big_rock": 0.0071438818517346415
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07367742646548418,
+          "bedrock": 0.07776995622348343,
+          "sand": 0.07443696653439048,
+          "big_rock": 0.061587791426002146
+        }
+      },
+      {
+        "bin": 10,
+        "y_start": 0.625,
+        "y_stop": 0.6875,
+        "valid_pixels": 541364126,
+        "class_pixels": {
+          "soil": 196247908,
+          "bedrock": 275283733,
+          "sand": 66872364,
+          "big_rock": 2960121
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.36250630319748967,
+          "bedrock": 0.5085001384077673,
+          "sand": 0.12352566560718137,
+          "big_rock": 0.0054678927875616195
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.07082292886352377,
+          "bedrock": 0.07359264638671766,
+          "sand": 0.0729087797040646,
+          "big_rock": 0.0449763938283241
+        }
+      },
+      {
+        "bin": 11,
+        "y_start": 0.6875,
+        "y_stop": 0.75,
+        "valid_pixels": 507270477,
+        "class_pixels": {
+          "soil": 186059882,
+          "bedrock": 254698388,
+          "sand": 64422733,
+          "big_rock": 2089474
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.36678634069216687,
+          "bedrock": 0.5020958237236424,
+          "sand": 0.12699878254495778,
+          "big_rock": 0.004119053039232954
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.06714622296631884,
+          "bedrock": 0.06808948788612589,
+          "sand": 0.07023802610344047,
+          "big_rock": 0.03174769055658322
+        }
+      },
+      {
+        "bin": 12,
+        "y_start": 0.75,
+        "y_stop": 0.8125,
+        "valid_pixels": 464312003,
+        "class_pixels": {
+          "soil": 172795351,
+          "bedrock": 230004014,
+          "sand": 59855904,
+          "big_rock": 1656734
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3721535301339173,
+          "bedrock": 0.49536521243022874,
+          "sand": 0.12891310931714164,
+          "big_rock": 0.003568148118712322
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.062359252521665715,
+          "bedrock": 0.06148784704916675,
+          "sand": 0.06525895987053246,
+          "big_rock": 0.025172592894944057
+        }
+      },
+      {
+        "bin": 13,
+        "y_start": 0.8125,
+        "y_stop": 0.875,
+        "valid_pixels": 421684320,
+        "class_pixels": {
+          "soil": 159717856,
+          "bedrock": 205829553,
+          "sand": 54811109,
+          "big_rock": 1325802
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.37876166702143443,
+          "bedrock": 0.48811289212745684,
+          "sand": 0.12998137801282247,
+          "big_rock": 0.0031440628382862325
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.057639780566336195,
+          "bedrock": 0.05502519653010213,
+          "sand": 0.059758782737461956,
+          "big_rock": 0.02014437683134566
+        }
+      },
+      {
+        "bin": 14,
+        "y_start": 0.875,
+        "y_stop": 0.9375,
+        "valid_pixels": 383800722,
+        "class_pixels": {
+          "soil": 148558329,
+          "bedrock": 184605157,
+          "sand": 49614409,
+          "big_rock": 1022827
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.3870715204126166,
+          "bedrock": 0.4809922087640054,
+          "sand": 0.12927127583673487,
+          "big_rock": 0.0026649949866430944
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.05361247451794982,
+          "bedrock": 0.049351198097366315,
+          "sand": 0.054092988486669324,
+          "big_rock": 0.015540942404125796
+        }
+      },
+      {
+        "bin": 15,
+        "y_start": 0.9375,
+        "y_stop": 1.0,
+        "valid_pixels": 305400005,
+        "class_pixels": {
+          "soil": 121511251,
+          "bedrock": 144326509,
+          "sand": 38960795,
+          "big_rock": 601450
+        },
+        "class_share_of_valid_pixels": {
+          "soil": 0.39787573349908756,
+          "bedrock": 0.47258188158837783,
+          "sand": 0.1275730005308939,
+          "big_rock": 0.001969384381640727
+        },
+        "fraction_of_class_pixels": {
+          "soil": 0.04385158941766035,
+          "bedrock": 0.038583354073691026,
+          "sand": 0.04247769706107925,
+          "big_rock": 0.009138495375035523
+        }
+      }
+    ]
+  },
+  "component_size_correlations": {
+    "soil": {
+      "area_pixels": {
+        "n": 17962,
+        "mean": 154268.21729206102,
+        "std": 280051.15651913045,
+        "min": 1.0,
+        "p25": 12.0,
+        "median": 689.5,
+        "p75": 152136.25,
+        "max": 1035548.0
+      },
+      "centroid_y": {
+        "n": 17962,
+        "mean": 0.46673563479471897,
+        "std": 0.25053418781927606,
+        "min": 0.001869233338542672,
+        "p25": 0.2810363380855108,
+        "median": 0.4545659450396732,
+        "p75": 0.6320935707760974,
+        "max": 0.999543825350277
+      },
+      "pearson_centroid_y_vs_log1p_area": 0.07261371487403281,
+      "spearman_centroid_y_vs_area": 0.1088546355063769,
+      "components_16_to_256_pixels": 3148
+    },
+    "bedrock": {
+      "area_pixels": {
+        "n": 32252,
+        "mean": 115981.70194096491,
+        "std": 235393.77691512846,
+        "min": 1.0,
+        "p25": 7.0,
+        "median": 627.5,
+        "p75": 72361.25,
+        "max": 1035734.0
+      },
+      "centroid_y": {
+        "n": 32252,
+        "mean": 0.46960690670432725,
+        "std": 0.24802827998550914,
+        "min": 0.0039100684261974585,
+        "p25": 0.2819515602291002,
+        "median": 0.46144726729987073,
+        "p75": 0.6412512218963832,
+        "max": 1.0
+      },
+      "pearson_centroid_y_vs_log1p_area": 0.05701013801737741,
+      "spearman_centroid_y_vs_area": 0.07456574537239152,
+      "components_16_to_256_pixels": 5220
+    },
+    "sand": {
+      "area_pixels": {
+        "n": 13743,
+        "mean": 66739.8613839773,
+        "std": 155202.50331952894,
+        "min": 1.0,
+        "p25": 20.0,
+        "median": 1355.0,
+        "p75": 44606.0,
+        "max": 1035454.0
+      },
+      "centroid_y": {
+        "n": 13743,
+        "mean": 0.48021801950439125,
+        "std": 0.2588912278463111,
+        "min": 0.003562072336265885,
+        "p25": 0.27715441587833506,
+        "median": 0.462039752362333,
+        "p75": 0.6809545566489594,
+        "max": 0.9970674486803519
+      },
+      "pearson_centroid_y_vs_log1p_area": 0.03959033886900513,
+      "spearman_centroid_y_vs_area": 0.05021009560523702,
+      "components_16_to_256_pixels": 2296
+    },
+    "big_rock": {
+      "area_pixels": {
+        "n": 6272,
+        "mean": 10493.461734693878,
+        "std": 34221.03614143735,
+        "min": 1.0,
+        "p25": 4.0,
+        "median": 196.0,
+        "p75": 4345.75,
+        "max": 634029.0
+      },
+      "centroid_y": {
+        "n": 6272,
+        "mean": 0.3653705083921598,
+        "std": 0.22375187011165865,
+        "min": 0.004887585532746823,
+        "p25": 0.192965987108495,
+        "median": 0.32642960346219885,
+        "p75": 0.5002448675946687,
+        "max": 0.9961779961779962
+      },
+      "pearson_centroid_y_vs_log1p_area": -0.062030273727221294,
+      "spearman_centroid_y_vs_area": -0.05901124966703827,
+      "components_16_to_256_pixels": 1155
+    }
+  },
+  "range_mask_coverage": {
+    "foreground_pixel_fraction": {
+      "n": 12850,
+      "mean": 0.10566641840953307,
+      "std": 0.13664485612448696,
+      "min": 0.0,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.2099609375,
+      "max": 0.931640625
+    },
+    "cutoff_fraction_of_image_height": {
+      "n": 12850,
+      "mean": 0.10566641840953307,
+      "std": 0.13664485612448696,
+      "min": 0.0,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.2099609375,
+      "max": 0.931640625
+    },
+    "empty_masks": 6872,
+    "full_masks": 0
+  }
+}
