@@ -8,7 +8,24 @@
 
 The project compares convolutional, transformer, and foundation-model approaches under a preregistered, leakage-safe evaluation protocol. It uses the [AI4Mars merged-0.6 release](https://zenodo.org/records/15995036), keeps ignore-label pixels out of optimization and scoring, and records per-image sufficient statistics for paired inference.
 
-![A fixed AI4Mars expert-test scene with the grayscale rover image, expert terrain labels, and five model predictions](paper/figures/qualitative_predictions.png)
+## Final report and results
+
+The completed study contains 30 learned three-seed runs plus the majority and SAM references. The strongest mean Curiosity score is **0.836 mIoU** (DINOv3-SAT); the validation-selected U-Net reaches **0.792 mIoU** on Opportunity/Spirit, a **0.030** cross-rover drop. The sealed analysis supports H1, H4, and H5 and rejects H0, H2, and H3.
+
+- [Final NeurIPS 2026-format report (PDF)](paper/roth_final_neurips.pdf)
+- [LaTeX source](paper/roth_final_neurips.tex)
+- [Machine-readable hypothesis verdicts](experiments/manifests/verdicts.json)
+- [Generated final result summary](paper/generated/final_results.json)
+
+![Mean expert-test mIoU for all evaluated AresSeg systems](paper/figures/final/performance_overview.png)
+
+*Mean expert-test mIoU; error bars show the observed range across three seeds for learned systems. SAM is a deterministic label-assisted region-oracle diagnostic, not an ordinary deployable baseline.*
+
+![Per-class IoU heatmap for representative model families](paper/figures/final/per_class_heatmap.png)
+
+*Per-class performance exposes the persistent big-rock challenge that is hidden by aggregate mIoU.*
+
+![Curiosity qualitative predictions for representative AresSeg systems](paper/figures/final/qualitative_msl.png)
 
 *A fixed expert-test scene with substantial big-rock coverage, its expert label, and seed-1414 predictions. Black pixels are ignored. This diagnostic scene was selected for rare-class coverage, not because it maximized a model score.*
 
@@ -84,8 +101,8 @@ Download and validate the merged AI4Mars release before running experiments:
 
 The preflight verifies the configured 16,064 MSL training labels, 322 MSL gold-test labels, 204 MER gold-test labels, image/label pairing, split disjointness, label values, and data fingerprints. The merged archive is approximately 16.2 GB with expected MD5 **daf80a86021253292e6c425f97baa5c6**. Raw dataset files, model weights, generated predictions, and secrets remain untracked; the public Zenodo release is cited instead.
 
-## Current status and provenance
+## Status and provenance
 
-The data, model, training, evaluation, paper, and CPU prototype paths are implemented. The three-seed GPU inventory is still being completed, so the figures above are preliminary diagnostics and **H0–H5 are not final verdicts**.
+Training and evaluation are complete: all 30 planned learned runs finished, the cross-rover and reference evaluations are recorded, and the preregistered bootstrap/Holm analysis is sealed under Protocol V5. The final report distinguishes confirmatory results from the exploratory MPBA diagnostic and reports limitations without treating incomplete or exploratory artifacts as evidence.
 
 Historical preregistration snapshots, manifests, and schema identifiers intentionally retain the original **marsseg** namespace so their hashes and provenance remain immutable. New Python code uses **aresseg**; those historical identifiers are not import paths.

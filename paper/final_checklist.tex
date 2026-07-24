@@ -1,0 +1,85 @@
+\section*{NeurIPS Paper Checklist}
+
+\begin{enumerate}
+
+\item \textbf{Claims}
+  \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: The abstract and Sections 1, 5, and 7 report only the sealed H0--H5 decisions and distinguish nonsignificance from equivalence.
+
+\item \textbf{Limitations}
+  \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: Section 7 discusses dataset, label, seed, domain-shift, compute, oracle-reference, and flight-readiness limitations.
+
+\item \textbf{Theory assumptions and proofs}
+  \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
+  \item[] Answer: \answerNA{}
+  \item[] Justification: The paper is an empirical study and makes no new theoretical claim.
+
+\item \textbf{Experimental result reproducibility}
+  \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: Section 4 gives the data, model, optimization, seed, metric, and inference protocol; sealed configs, manifests, sufficient statistics, and code accompany the paper.
+
+\item \textbf{Open access to data and code}
+  \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: The source repository is public and cites the public Zenodo dataset with acquisition, checksum, layout, and notebook instructions; large raw data and weights are intentionally not duplicated.
+
+\item \textbf{Experimental setting/details}
+  \item[] Question: Does the paper specify all the training and test details necessary to understand the results?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: Sections 3--4 specify splits, image size, augmentations, objective, optimizer, hyperparameters, checkpoint selection, seeds, and test sets.
+
+\item \textbf{Experiment statistical significance}
+  \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: Section 4.3 defines the 10,000-replicate seed/image bootstrap, 90\% percentile intervals, plus-one p-values, and Holm families; Section 5 reports intervals and adjusted tests.
+
+\item \textbf{Experiments compute resources}
+  \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources needed to reproduce the experiments?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: Section 4.3 reports V100-SXM2 32 GB hardware, 30 learned runs, 179.1 device-hours, and median run time; manifests retain per-run timestamps and environments.
+
+\item \textbf{Code of ethics}
+  \item[] Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: The study uses public planetary imagery, reports negative results and amendments, and makes no human-subject or deployment claim.
+
+\item \textbf{Broader impacts}
+  \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: Section 7 discusses scientific productivity, rover safety, the harm of confident perception errors, and required deployment safeguards.
+
+\item \textbf{Safeguards}
+  \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse?
+  \item[] Answer: \answerNA{}
+  \item[] Justification: The project releases no high-risk generative or personal-data model; checkpoints are excluded, and the public planetary dataset is distributed by its original provider.
+
+\item \textbf{Licenses for existing assets}
+  \item[] Question: Are the creators or original owners of assets used in the paper properly credited and are the license and terms of use explicitly mentioned and properly respected?
+  \item[] Answer: \answerNo{}
+  \item[] Justification: All papers, models, NASA/JPL imagery, and the exact Zenodo release are credited, but the bundled merged-0.6 archive metadata does not state an explicit dataset license; Section 7 flags this for downstream verification.
+
+\item \textbf{New assets}
+  \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
+  \item[] Answer: \answerYes{}
+  \item[] Justification: The repository documents AresSeg code, configs, notebook, compact result stores, protocol seals, generated figures, and exclusions in its README and development plan.
+
+\item \textbf{Crowdsourcing and research with human subjects}
+  \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation?
+  \item[] Answer: \answerNA{}
+  \item[] Justification: This study recruited no participants. AI4Mars's prior crowdsourcing is an existing cited public dataset and is not a human-subject experiment conducted here.
+
+\item \textbf{Institutional review board approvals or equivalent}
+  \item[] Question: Does the paper describe potential risks incurred by study participants and whether IRB approvals or equivalent were obtained?
+  \item[] Answer: \answerNA{}
+  \item[] Justification: This study contains no interaction with or data about human subjects.
+
+\item \textbf{Declaration of LLM usage}
+  \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research?
+  \item[] Answer: \answerNA{}
+  \item[] Justification: No LLM is part of the dataset, models, experimental method, statistical analysis, or scientific contribution.
+
+\end{enumerate}

@@ -1,110 +1,870 @@
 {
   "alpha": 0.1,
   "correction": "holm",
-  "generated_git_sha": "711628e05d5d64947e98532e45dbab03bf1a0607",
+  "generated_git_sha": "82d851135a2050b4e9ac74e140969c96f5bd8983",
   "families": {
     "A": {
       "members": [
         {
-          "comparison": "baseline_vs_unet",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'unet', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "comparison": "majority_vs_unet",
+          "runs": [
+            [
+              "unet__pretrained__resnet34__in_rover__seed1414__gpu_full__f8a3ff04__gitc188b320__codebebd8b2d__20260710T232715551236Z",
+              "unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z",
+              "unet__pretrained__resnet34__in_rover__seed1416__gpu_full__1cfcca16__gitc2c2860f__codebebd8b2d__20260715T212112649565Z"
+            ],
+            [
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1414__gpu_full__f8a3ff04__gitc188b320__codebebd8b2d__20260710T232715551236Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1416__gpu_full__1cfcca16__gitc2c2860f__codebebd8b2d__20260715T212112649565Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              }
+            ],
+            "b": [
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              },
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              },
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              }
+            ]
+          },
+          "delta": 0.7651411273166242,
+          "ci_low": 0.7054208192520768,
+          "ci_high": 0.8350150255787607,
+          "raw_p": 9.999000099990002e-05,
+          "holm_p": 0.00029997000299970003,
+          "decision": "significant"
         },
         {
-          "comparison": "baseline_vs_deeplabv3plus",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'deeplabv3plus', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "comparison": "majority_vs_deeplabv3plus",
+          "runs": [
+            [
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1414__gpu_full__71491561__gitc188b320__codebebd8b2d__20260711T052558603387Z",
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1415__gpu_full__b94cb23d__gitc188b320__codebebd8b2d__20260713T182656018111Z",
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1416__gpu_full__5206822e__git3e52372c__codebebd8b2d__20260716T024617693883Z"
+            ],
+            [
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1414__gpu_full__71491561__gitc188b320__codebebd8b2d__20260711T052558603387Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1415__gpu_full__b94cb23d__gitc188b320__codebebd8b2d__20260713T182656018111Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1416__gpu_full__5206822e__git3e52372c__codebebd8b2d__20260716T024617693883Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              }
+            ],
+            "b": [
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              },
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              },
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              }
+            ]
+          },
+          "delta": 0.7541092187122104,
+          "ci_low": 0.6992106265100017,
+          "ci_high": 0.81616916013585,
+          "raw_p": 9.999000099990002e-05,
+          "holm_p": 0.00029997000299970003,
+          "decision": "significant"
         },
         {
-          "comparison": "baseline_vs_segformer",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "comparison": "majority_vs_segformer",
+          "runs": [
+            [
+              "segformer__pretrained__mit-b0__in_rover__seed1414__gpu_full__22d89713__gitc188b320__codebebd8b2d__20260711T152946214899Z",
+              "segformer__pretrained__mit-b0__in_rover__seed1415__gpu_full__deee6903__gitc188b320__codebebd8b2d__20260714T034231967203Z",
+              "segformer__pretrained__mit-b0__in_rover__seed1416__gpu_full__19dbcb1d__git3e52372c__codebebd8b2d__20260716T110052408653Z"
+            ],
+            [
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+              "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "segformer__pretrained__mit-b0__in_rover__seed1414__gpu_full__22d89713__gitc188b320__codebebd8b2d__20260711T152946214899Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b0__in_rover__seed1415__gpu_full__deee6903__gitc188b320__codebebd8b2d__20260714T034231967203Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b0__in_rover__seed1416__gpu_full__19dbcb1d__git3e52372c__codebebd8b2d__20260716T110052408653Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              }
+            ],
+            "b": [
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              },
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              },
+              {
+                "run_id": "majority__constant__none__in_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350537125Z",
+                "total_parameters": 0,
+                "trainable_parameters": 0
+              }
+            ]
+          },
+          "delta": 0.7583163650506496,
+          "ci_low": 0.7020489356653025,
+          "ci_high": 0.8200788617041124,
+          "raw_p": 9.999000099990002e-05,
+          "holm_p": 0.00029997000299970003,
+          "decision": "significant"
         }
+      ],
+      "holm_test_count": 3,
+      "holm_scopes": [
+        "majority_vs_unet:ALL",
+        "majority_vs_deeplabv3plus:ALL",
+        "majority_vs_segformer:ALL"
       ]
     },
     "B": {
       "members": [
         {
           "comparison": "unet_pretrained_vs_scratch",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'unet', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "runs": [
+            [
+              "unet__pretrained__resnet34__in_rover__seed1414__gpu_full__f8a3ff04__gitc188b320__codebebd8b2d__20260710T232715551236Z",
+              "unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z",
+              "unet__pretrained__resnet34__in_rover__seed1416__gpu_full__1cfcca16__gitc2c2860f__codebebd8b2d__20260715T212112649565Z"
+            ],
+            [
+              "unet__scratch__resnet34__in_rover__seed1414__gpu_full__39bfa6f5__gitc188b320__codebebd8b2d__20260711T015842068985Z",
+              "unet__scratch__resnet34__in_rover__seed1415__gpu_full__643d154d__gitc188b320__codebebd8b2d__20260713T145716262704Z",
+              "unet__scratch__resnet34__in_rover__seed1416__gpu_full__57fe1694__gitc2c2860f__codebebd8b2d__20260715T233432076608Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1414__gpu_full__f8a3ff04__gitc188b320__codebebd8b2d__20260710T232715551236Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1416__gpu_full__1cfcca16__gitc2c2860f__codebebd8b2d__20260715T212112649565Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              }
+            ],
+            "b": [
+              {
+                "run_id": "unet__scratch__resnet34__in_rover__seed1414__gpu_full__39bfa6f5__gitc188b320__codebebd8b2d__20260711T015842068985Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__scratch__resnet34__in_rover__seed1415__gpu_full__643d154d__gitc188b320__codebebd8b2d__20260713T145716262704Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__scratch__resnet34__in_rover__seed1416__gpu_full__57fe1694__gitc2c2860f__codebebd8b2d__20260715T233432076608Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              }
+            ]
+          },
+          "delta": -0.0031718159829250414,
+          "ci_low": -0.02316444451174163,
+          "ci_high": 0.02364080651879901,
+          "raw_p": 0.5257474252574742,
+          "holm_p": 1.0,
+          "decision": "not_significant"
         },
         {
           "comparison": "deeplabv3plus_pretrained_vs_scratch",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'deeplabv3plus', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "runs": [
+            [
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1414__gpu_full__71491561__gitc188b320__codebebd8b2d__20260711T052558603387Z",
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1415__gpu_full__b94cb23d__gitc188b320__codebebd8b2d__20260713T182656018111Z",
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1416__gpu_full__5206822e__git3e52372c__codebebd8b2d__20260716T024617693883Z"
+            ],
+            [
+              "deeplabv3plus__scratch__resnet50__in_rover__seed1414__gpu_full__286228c3__gitc188b320__codebebd8b2d__20260711T093209622760Z",
+              "deeplabv3plus__scratch__resnet50__in_rover__seed1415__gpu_full__3b58f954__gitc188b320__codebebd8b2d__20260713T221922546968Z",
+              "deeplabv3plus__scratch__resnet50__in_rover__seed1416__gpu_full__f8634c3c__git3e52372c__codebebd8b2d__20260716T054815634363Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1414__gpu_full__71491561__gitc188b320__codebebd8b2d__20260711T052558603387Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1415__gpu_full__b94cb23d__gitc188b320__codebebd8b2d__20260713T182656018111Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1416__gpu_full__5206822e__git3e52372c__codebebd8b2d__20260716T024617693883Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              }
+            ],
+            "b": [
+              {
+                "run_id": "deeplabv3plus__scratch__resnet50__in_rover__seed1414__gpu_full__286228c3__gitc188b320__codebebd8b2d__20260711T093209622760Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__scratch__resnet50__in_rover__seed1415__gpu_full__3b58f954__gitc188b320__codebebd8b2d__20260713T221922546968Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__scratch__resnet50__in_rover__seed1416__gpu_full__f8634c3c__git3e52372c__codebebd8b2d__20260716T054815634363Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              }
+            ]
+          },
+          "delta": -0.005181934792524194,
+          "ci_low": -0.03439924899749093,
+          "ci_high": 0.029080272198444165,
+          "raw_p": 0.5748425157484252,
+          "holm_p": 1.0,
+          "decision": "not_significant"
         },
         {
           "comparison": "segformer_pretrained_vs_scratch",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "runs": [
+            [
+              "segformer__pretrained__mit-b0__in_rover__seed1414__gpu_full__22d89713__gitc188b320__codebebd8b2d__20260711T152946214899Z",
+              "segformer__pretrained__mit-b0__in_rover__seed1415__gpu_full__deee6903__gitc188b320__codebebd8b2d__20260714T034231967203Z",
+              "segformer__pretrained__mit-b0__in_rover__seed1416__gpu_full__19dbcb1d__git3e52372c__codebebd8b2d__20260716T110052408653Z"
+            ],
+            [
+              "segformer__scratch__mit-b0__in_rover__seed1414__gpu_full__59ab550d__gitc188b320__codebebd8b2d__20260712T002402137718Z",
+              "segformer__scratch__mit-b0__in_rover__seed1415__gpu_full__df715c71__gitc188b320__codebebd8b2d__20260714T105400494420Z",
+              "segformer__scratch__mit-b0__in_rover__seed1416__gpu_full__88b50836__git3e52372c__codebebd8b2d__20260716T171406790520Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "segformer__pretrained__mit-b0__in_rover__seed1414__gpu_full__22d89713__gitc188b320__codebebd8b2d__20260711T152946214899Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b0__in_rover__seed1415__gpu_full__deee6903__gitc188b320__codebebd8b2d__20260714T034231967203Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b0__in_rover__seed1416__gpu_full__19dbcb1d__git3e52372c__codebebd8b2d__20260716T110052408653Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              }
+            ],
+            "b": [
+              {
+                "run_id": "segformer__scratch__mit-b0__in_rover__seed1414__gpu_full__59ab550d__gitc188b320__codebebd8b2d__20260712T002402137718Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              },
+              {
+                "run_id": "segformer__scratch__mit-b0__in_rover__seed1415__gpu_full__df715c71__gitc188b320__codebebd8b2d__20260714T105400494420Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              },
+              {
+                "run_id": "segformer__scratch__mit-b0__in_rover__seed1416__gpu_full__88b50836__git3e52372c__codebebd8b2d__20260716T171406790520Z",
+                "total_parameters": 3715172,
+                "trainable_parameters": 3715172
+              }
+            ]
+          },
+          "delta": 0.000577058566879877,
+          "ci_low": -0.01742987454447135,
+          "ci_high": 0.06281616466511333,
+          "raw_p": 0.197980201979802,
+          "holm_p": 0.593940605939406,
+          "decision": "not_significant"
         }
+      ],
+      "holm_test_count": 3,
+      "holm_scopes": [
+        "unet_pretrained_vs_scratch:ALL",
+        "deeplabv3plus_pretrained_vs_scratch:ALL",
+        "segformer_pretrained_vs_scratch:ALL"
       ]
     },
     "C": {
       "members": [
         {
           "comparison": "segformer_vs_unet",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "runs": [
+            [
+              "segformer__pretrained__mit-b2__in_rover__seed1414__gpu_full__297bbe53__gitc188b320__codebebd8b2d__20260712T112034243611Z",
+              "segformer__pretrained__mit-b2__in_rover__seed1415__gpu_full__b8526e10__gitc188b320__codebebd8b2d__20260714T203806552222Z",
+              "segformer__pretrained__mit-b2__in_rover__seed1416__gpu_full__0292c93e__git3e52372c__codebebd8b2d__20260717T012339903058Z"
+            ],
+            [
+              "unet__pretrained__resnet34__in_rover__seed1414__gpu_full__f8a3ff04__gitc188b320__codebebd8b2d__20260710T232715551236Z",
+              "unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z",
+              "unet__pretrained__resnet34__in_rover__seed1416__gpu_full__1cfcca16__gitc2c2860f__codebebd8b2d__20260715T212112649565Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "segformer__pretrained__mit-b2__in_rover__seed1414__gpu_full__297bbe53__gitc188b320__codebebd8b2d__20260712T112034243611Z",
+                "total_parameters": 27349700,
+                "trainable_parameters": 27349700
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b2__in_rover__seed1415__gpu_full__b8526e10__gitc188b320__codebebd8b2d__20260714T203806552222Z",
+                "total_parameters": 27349700,
+                "trainable_parameters": 27349700
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b2__in_rover__seed1416__gpu_full__0292c93e__git3e52372c__codebebd8b2d__20260717T012339903058Z",
+                "total_parameters": 27349700,
+                "trainable_parameters": 27349700
+              }
+            ],
+            "b": [
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1414__gpu_full__f8a3ff04__gitc188b320__codebebd8b2d__20260710T232715551236Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1415__gpu_full__7ab4e19b__gitc188b320__codebebd8b2d__20260713T115339963731Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              },
+              {
+                "run_id": "unet__pretrained__resnet34__in_rover__seed1416__gpu_full__1cfcca16__gitc2c2860f__codebebd8b2d__20260715T212112649565Z",
+                "total_parameters": 24436804,
+                "trainable_parameters": 24436804
+              }
+            ]
+          },
+          "delta": -0.005671516521248199,
+          "ci_low": -0.03912550856994382,
+          "ci_high": 0.02150741932564706,
+          "raw_p": 0.6559344065593441,
+          "holm_p": 1.0,
+          "decision": "not_significant",
+          "overall_decision": "not_significant",
+          "direction": "cnn",
+          "per_class": {
+            "soil": {
+              "delta": 0.0026100314113982614,
+              "ci_low": -0.005070223352984731,
+              "ci_high": 0.010976652440825367,
+              "p": 0.6275372462753724,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.6275372462753724,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "segformer"
+            },
+            "bedrock": {
+              "delta": 0.00034058974327281594,
+              "ci_low": -0.0070643494327421825,
+              "ci_high": 0.007988021781553686,
+              "p": 0.9447055294470553,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.9447055294470553,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "segformer"
+            },
+            "sand": {
+              "delta": 0.008727613925529898,
+              "ci_low": -0.003473175961036288,
+              "ci_high": 0.02360958673758949,
+              "p": 0.28997100289971,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.28997100289971,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "segformer"
+            },
+            "big_rock": {
+              "delta": -0.034364301165193734,
+              "ci_low": -0.16083213464196586,
+              "ci_high": 0.06791659974461701,
+              "p": 0.4811518848115188,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.4811518848115188,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "cnn"
+            }
+          }
         },
         {
           "comparison": "segformer_vs_deeplabv3plus",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'segformer', 'variant': 'pretrained', 'stratum': 'all'} (backbone=None)"
+          "runs": [
+            [
+              "segformer__pretrained__mit-b2__in_rover__seed1414__gpu_full__297bbe53__gitc188b320__codebebd8b2d__20260712T112034243611Z",
+              "segformer__pretrained__mit-b2__in_rover__seed1415__gpu_full__b8526e10__gitc188b320__codebebd8b2d__20260714T203806552222Z",
+              "segformer__pretrained__mit-b2__in_rover__seed1416__gpu_full__0292c93e__git3e52372c__codebebd8b2d__20260717T012339903058Z"
+            ],
+            [
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1414__gpu_full__71491561__gitc188b320__codebebd8b2d__20260711T052558603387Z",
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1415__gpu_full__b94cb23d__gitc188b320__codebebd8b2d__20260713T182656018111Z",
+              "deeplabv3plus__pretrained__resnet50__in_rover__seed1416__gpu_full__5206822e__git3e52372c__codebebd8b2d__20260716T024617693883Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "segformer__pretrained__mit-b2__in_rover__seed1414__gpu_full__297bbe53__gitc188b320__codebebd8b2d__20260712T112034243611Z",
+                "total_parameters": 27349700,
+                "trainable_parameters": 27349700
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b2__in_rover__seed1415__gpu_full__b8526e10__gitc188b320__codebebd8b2d__20260714T203806552222Z",
+                "total_parameters": 27349700,
+                "trainable_parameters": 27349700
+              },
+              {
+                "run_id": "segformer__pretrained__mit-b2__in_rover__seed1416__gpu_full__0292c93e__git3e52372c__codebebd8b2d__20260717T012339903058Z",
+                "total_parameters": 27349700,
+                "trainable_parameters": 27349700
+              }
+            ],
+            "b": [
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1414__gpu_full__71491561__gitc188b320__codebebd8b2d__20260711T052558603387Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1415__gpu_full__b94cb23d__gitc188b320__codebebd8b2d__20260713T182656018111Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              },
+              {
+                "run_id": "deeplabv3plus__pretrained__resnet50__in_rover__seed1416__gpu_full__5206822e__git3e52372c__codebebd8b2d__20260716T024617693883Z",
+                "total_parameters": 26678356,
+                "trainable_parameters": 26678356
+              }
+            ]
+          },
+          "delta": 0.005360392083165559,
+          "ci_low": -0.02945735907710737,
+          "ci_high": 0.04558116674941448,
+          "raw_p": 0.8607139286071392,
+          "holm_p": 1.0,
+          "decision": "not_significant",
+          "overall_decision": "not_significant",
+          "direction": "segformer",
+          "per_class": {
+            "soil": {
+              "delta": -0.00018641170706368282,
+              "ci_low": -0.00396467654191817,
+              "ci_high": 0.002832616165693914,
+              "p": 0.9955004499550045,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.9955004499550045,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "cnn"
+            },
+            "bedrock": {
+              "delta": 0.00407245307861015,
+              "ci_low": -0.007151309820906067,
+              "ci_high": 0.01665507283380949,
+              "p": 0.5941405859414058,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.5941405859414058,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "segformer"
+            },
+            "sand": {
+              "delta": 0.004687614899111403,
+              "ci_low": -0.0059669990262955965,
+              "ci_high": 0.01671227776341169,
+              "p": 0.5173482651734826,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.5173482651734826,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "segformer"
+            },
+            "big_rock": {
+              "delta": 0.012867912062004216,
+              "ci_low": -0.11776467202184399,
+              "ci_high": 0.16972383697158444,
+              "p": 0.9795020497950205,
+              "n_images": 322,
+              "n_seeds": 3,
+              "raw_p": 0.9795020497950205,
+              "holm_p": 1.0,
+              "decision": "not_significant",
+              "direction": "segformer"
+            }
+          }
         }
+      ],
+      "holm_test_count": 10,
+      "holm_scopes": [
+        "segformer_vs_unet:ALL",
+        "segformer_vs_unet:soil",
+        "segformer_vs_unet:bedrock",
+        "segformer_vs_unet:sand",
+        "segformer_vs_unet:big_rock",
+        "segformer_vs_deeplabv3plus:ALL",
+        "segformer_vs_deeplabv3plus:soil",
+        "segformer_vs_deeplabv3plus:bedrock",
+        "segformer_vs_deeplabv3plus:sand",
+        "segformer_vs_deeplabv3plus:big_rock"
       ]
     },
     "E": {
       "members": [
         {
-          "comparison": "dinov3_sat_vs_baseline",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'dinov3_sat', 'variant': 'finetuned', 'stratum': 'all'} (backbone=None)"
+          "comparison": "dinov3_sat_vs_tiny_unet",
+          "runs": [
+            [
+              "dinov3_sat__finetuned__vitl16-sat493m__in_rover__seed1414__gpu_full__684c258f__gitc188b320__codebebd8b2d__20260713T043353711900Z",
+              "dinov3_sat__finetuned__vitl16-sat493m__in_rover__seed1415__gpu_full__f5a39e4f__gitc2c2860f__codebebd8b2d__20260715T133000491916Z",
+              "dinov3_sat__finetuned__vitl16-sat493m__in_rover__seed1416__gpu_full__c0df30fe__git3e52372c__codebebd8b2d__20260718T045647257463Z"
+            ],
+            [
+              "tiny_unet__scratch__none__in_rover__seed1414__gpu_full__b88a4624__gitc188b320__codebebd8b2d__20260710T213637673936Z",
+              "tiny_unet__scratch__none__in_rover__seed1415__gpu_full__3a7324f6__gitc188b320__codebebd8b2d__20260713T101023694260Z",
+              "tiny_unet__scratch__none__in_rover__seed1416__gpu_full__d4d5baf3__gitc2c2860f__codebebd8b2d__20260715T185231112644Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "dinov3_sat__finetuned__vitl16-sat493m__in_rover__seed1414__gpu_full__684c258f__gitc188b320__codebebd8b2d__20260713T043353711900Z",
+                "total_parameters": 305490436,
+                "trainable_parameters": 2360836
+              },
+              {
+                "run_id": "dinov3_sat__finetuned__vitl16-sat493m__in_rover__seed1415__gpu_full__f5a39e4f__gitc2c2860f__codebebd8b2d__20260715T133000491916Z",
+                "total_parameters": 305490436,
+                "trainable_parameters": 2360836
+              },
+              {
+                "run_id": "dinov3_sat__finetuned__vitl16-sat493m__in_rover__seed1416__gpu_full__c0df30fe__git3e52372c__codebebd8b2d__20260718T045647257463Z",
+                "total_parameters": 305490436,
+                "trainable_parameters": 2360836
+              }
+            ],
+            "b": [
+              {
+                "run_id": "tiny_unet__scratch__none__in_rover__seed1414__gpu_full__b88a4624__gitc188b320__codebebd8b2d__20260710T213637673936Z",
+                "total_parameters": 117412,
+                "trainable_parameters": 117412
+              },
+              {
+                "run_id": "tiny_unet__scratch__none__in_rover__seed1415__gpu_full__3a7324f6__gitc188b320__codebebd8b2d__20260713T101023694260Z",
+                "total_parameters": 117412,
+                "trainable_parameters": 117412
+              },
+              {
+                "run_id": "tiny_unet__scratch__none__in_rover__seed1416__gpu_full__d4d5baf3__gitc2c2860f__codebebd8b2d__20260715T185231112644Z",
+                "total_parameters": 117412,
+                "trainable_parameters": 117412
+              }
+            ]
+          },
+          "delta": 0.1476129645196039,
+          "ci_low": 0.09062164681380455,
+          "ci_high": 0.18972051943668222,
+          "raw_p": 9.999000099990002e-05,
+          "holm_p": 0.00019998000199980003,
+          "decision": "significant"
         },
         {
-          "comparison": "sam_zeroshot_vs_baseline",
-          "decision": "deferred",
-          "reason": "no canonical run for {'model': 'sam', 'variant': 'zeroshot', 'stratum': 'all'} (backbone=None)"
+          "comparison": "sam_region_oracle_vs_tiny_unet",
+          "runs": [
+            [
+              "sam__region_oracle_upper_bound__vit-b__in_rover__seed1414__gpu_full__3e6df100__git3bd8b1e0__code6e952f10__20260724T172450269924Z",
+              "sam__region_oracle_upper_bound__vit-b__in_rover__seed1414__gpu_full__3e6df100__git3bd8b1e0__code6e952f10__20260724T172450269924Z",
+              "sam__region_oracle_upper_bound__vit-b__in_rover__seed1414__gpu_full__3e6df100__git3bd8b1e0__code6e952f10__20260724T172450269924Z"
+            ],
+            [
+              "tiny_unet__scratch__none__in_rover__seed1414__gpu_full__b88a4624__gitc188b320__codebebd8b2d__20260710T213637673936Z",
+              "tiny_unet__scratch__none__in_rover__seed1415__gpu_full__3a7324f6__gitc188b320__codebebd8b2d__20260713T101023694260Z",
+              "tiny_unet__scratch__none__in_rover__seed1416__gpu_full__d4d5baf3__gitc2c2860f__codebebd8b2d__20260715T185231112644Z"
+            ]
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "parameter_counts": {
+            "a": [
+              {
+                "run_id": "sam__region_oracle_upper_bound__vit-b__in_rover__seed1414__gpu_full__3e6df100__git3bd8b1e0__code6e952f10__20260724T172450269924Z",
+                "total_parameters": 93735472,
+                "trainable_parameters": 93735472
+              },
+              {
+                "run_id": "sam__region_oracle_upper_bound__vit-b__in_rover__seed1414__gpu_full__3e6df100__git3bd8b1e0__code6e952f10__20260724T172450269924Z",
+                "total_parameters": 93735472,
+                "trainable_parameters": 93735472
+              },
+              {
+                "run_id": "sam__region_oracle_upper_bound__vit-b__in_rover__seed1414__gpu_full__3e6df100__git3bd8b1e0__code6e952f10__20260724T172450269924Z",
+                "total_parameters": 93735472,
+                "trainable_parameters": 93735472
+              }
+            ],
+            "b": [
+              {
+                "run_id": "tiny_unet__scratch__none__in_rover__seed1414__gpu_full__b88a4624__gitc188b320__codebebd8b2d__20260710T213637673936Z",
+                "total_parameters": 117412,
+                "trainable_parameters": 117412
+              },
+              {
+                "run_id": "tiny_unet__scratch__none__in_rover__seed1415__gpu_full__3a7324f6__gitc188b320__codebebd8b2d__20260713T101023694260Z",
+                "total_parameters": 117412,
+                "trainable_parameters": 117412
+              },
+              {
+                "run_id": "tiny_unet__scratch__none__in_rover__seed1416__gpu_full__d4d5baf3__gitc2c2860f__codebebd8b2d__20260715T185231112644Z",
+                "total_parameters": 117412,
+                "trainable_parameters": 117412
+              }
+            ]
+          },
+          "delta": -0.057525486916031245,
+          "ci_low": -0.12970674106875196,
+          "ci_high": -0.030599003690049118,
+          "raw_p": 0.9984001599840016,
+          "holm_p": 0.9984001599840016,
+          "decision": "not_significant"
         }
+      ],
+      "holm_test_count": 2,
+      "holm_scopes": [
+        "dinov3_sat_vs_tiny_unet:ALL",
+        "sam_region_oracle_vs_tiny_unet:ALL"
       ]
     },
     "D": {
       "members": [
         {
           "comparison": "best_in_rover_vs_cross_rover",
-          "decision": "deferred",
-          "reason": "missing cross_rover rows for subject and/or baseline"
+          "miou_in_rover": 0.8211188232667289,
+          "miou_cross_rover": 0.7916114079521379,
+          "drop": 0.029507415314591,
+          "drop_threshold": 0.15,
+          "cross_rover_ci_low": 0.7248005128611823,
+          "cross_rover_ci_high": 0.8477619219871253,
+          "baseline_on_mer_miou": 0.0683903968364468,
+          "n_seeds": 3,
+          "decision": "support",
+          "subject_selector": {
+            "model": "unet",
+            "variant": "pretrained",
+            "stratum": "cross_rover"
+          },
+          "subject_runs": [
+            "unet__pretrained__resnet34__cross_rover__seed1414__gpu_full__f8a3ff04__git3bd8b1e0__code6e952f10__20260724T171709224449Z",
+            "unet__pretrained__resnet34__cross_rover__seed1415__gpu_full__7ab4e19b__git3bd8b1e0__code6e952f10__20260724T171709280642Z",
+            "unet__pretrained__resnet34__cross_rover__seed1416__gpu_full__1cfcca16__git3bd8b1e0__code6e952f10__20260724T172450311142Z"
+          ],
+          "reference_runs": [
+            "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z",
+            "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z",
+            "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z"
+          ],
+          "seeds": [
+            1414,
+            1415,
+            1416
+          ],
+          "mean_best_val_miou": 0.8540289799372355
         }
       ]
     }
   },
   "hypotheses": {
     "H0": {
-      "decision": "deferred",
-      "evidence": "H0 holds iff H1 is not rejected (reported honestly)."
+      "decision": "reject",
+      "evidence": "H0 is rejected iff Family A rejects at least one majority comparison; otherwise non-significance is fail-to-reject, never support for H0."
     },
     "H1": {
-      "decision": "deferred",
-      "evidence": "Family A vs baseline, Holm alpha=0.10."
+      "decision": "support",
+      "evidence": "Family A deep models vs constant-majority, Holm alpha=0.10."
     },
     "H2": {
-      "decision": "deferred",
-      "evidence": "Family B pretrained vs scratch, Holm alpha=0.10."
+      "decision": "reject",
+      "evidence": "Family B pretrained vs scratch, Holm alpha=0.10; support means transfer helped at least one tested architecture, not that transfer helps generally."
     },
     "H3": {
-      "decision": "deferred",
-      "evidence": "Family C segformer-cnn two-sided + per-class strata."
+      "decision": "reject",
+      "evidence": "Family C is one Holm family over both overall tests and every fixed-set per-class test for both SegFormer-CNN comparisons."
     },
     "H4": {
-      "decision": "deferred",
+      "decision": "support",
       "evidence": {
-        "reason": "missing cross_rover rows for subject and/or baseline"
+        "miou_in_rover": 0.8211188232667289,
+        "miou_cross_rover": 0.7916114079521379,
+        "drop": 0.029507415314591,
+        "drop_threshold": 0.15,
+        "cross_rover_ci_low": 0.7248005128611823,
+        "cross_rover_ci_high": 0.8477619219871253,
+        "baseline_on_mer_miou": 0.0683903968364468,
+        "n_seeds": 3,
+        "subject_selector": {
+          "model": "unet",
+          "variant": "pretrained",
+          "stratum": "cross_rover"
+        },
+        "subject_runs": [
+          "unet__pretrained__resnet34__cross_rover__seed1414__gpu_full__f8a3ff04__git3bd8b1e0__code6e952f10__20260724T171709224449Z",
+          "unet__pretrained__resnet34__cross_rover__seed1415__gpu_full__7ab4e19b__git3bd8b1e0__code6e952f10__20260724T171709280642Z",
+          "unet__pretrained__resnet34__cross_rover__seed1416__gpu_full__1cfcca16__git3bd8b1e0__code6e952f10__20260724T172450311142Z"
+        ],
+        "reference_runs": [
+          "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z",
+          "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z",
+          "majority__constant__none__cross_rover__seed1414__gpu_full__901d01cf__git82d85113__code8a4f00fc__20260724T173350484675Z"
+        ],
+        "seeds": [
+          1414,
+          1415,
+          1416
+        ],
+        "mean_best_val_miou": 0.8540289799372355
       }
     },
     "H5": {
-      "decision": "deferred",
-      "evidence": "Family E on gpu_full; deferred members lack ok runs (5.8)."
+      "decision": "support",
+      "evidence": "Family E compares DINOv3-SAT and the SAM region-oracle upper bound with the learned TinyUNet reference; incomplete primary seed sets defer."
     }
   }
 }
