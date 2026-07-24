@@ -4,7 +4,7 @@ import logging
 import sys
 
 
-def get_logger(name: str = "marsseg", level: int = logging.INFO) -> logging.Logger:
+def get_logger(name: str = "aresseg", level: int = logging.INFO) -> logging.Logger:
     logger = logging.getLogger(name)
     if not logger.handlers:
         h = logging.StreamHandler(sys.stdout)

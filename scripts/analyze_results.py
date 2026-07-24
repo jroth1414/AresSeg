@@ -23,14 +23,14 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import pandas as pd  # noqa: E402
 
-from marsseg.eval import prereg, verdict  # noqa: E402
-from marsseg.utils.config import load_yaml  # noqa: E402
-from marsseg.utils.logging import get_logger  # noqa: E402
-from marsseg.utils.manifest import _git_sha  # noqa: E402
-from marsseg.utils.results import RESULT_COLUMNS  # noqa: E402
-from marsseg.utils.seed import set_seed  # noqa: E402
+from aresseg.eval import prereg, verdict  # noqa: E402
+from aresseg.utils.config import load_yaml  # noqa: E402
+from aresseg.utils.logging import get_logger  # noqa: E402
+from aresseg.utils.manifest import _git_sha  # noqa: E402
+from aresseg.utils.results import RESULT_COLUMNS  # noqa: E402
+from aresseg.utils.seed import set_seed  # noqa: E402
 
-log = get_logger("marsseg.analyze")
+log = get_logger("aresseg.analyze")
 
 
 def main(argv=None) -> int:

@@ -15,7 +15,7 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 
-# src/marsseg/utils/config.py -> parents[3] is the repo root
+# src/aresseg/utils/config.py -> parents[3] is the repo root
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 

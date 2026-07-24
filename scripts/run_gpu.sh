@@ -80,8 +80,8 @@ log "steps 2-4: exact lock installs (cu121, main, extras, local --no-deps)"
 log "step 5: pre-cache encoder weights (locked SMP package + pinned MiT revisions)"
 "$PY" - <<'PY'
 import segmentation_models_pytorch as smp
-from marsseg.models.zoo import SEGFORMER_SAFETENSORS, _verified_segformer_snapshot
-from marsseg.utils.config import load_yaml
+from aresseg.models.zoo import SEGFORMER_SAFETENSORS, _verified_segformer_snapshot
+from aresseg.utils.config import load_yaml
 from transformers import SegformerModel
 
 smp.Unet("resnet34", encoder_weights="imagenet")
@@ -103,7 +103,7 @@ print("pre-cache OK")
 PY
 # --- step 6: SAM ViT-B checkpoint (H5) -------------------------------------------------------
 log "step 6: SAM checkpoint"
-SAM_CONFIG_PIN="$("$PY" -c 'from marsseg.utils.config import load_yaml; m=load_yaml("configs/models/sam.yaml")["model"]; print(m["sam_checkpoint"] + "|" + m["sam_checkpoint_sha256"])')"
+SAM_CONFIG_PIN="$("$PY" -c 'from aresseg.utils.config import load_yaml; m=load_yaml("configs/models/sam.yaml")["model"]; print(m["sam_checkpoint"] + "|" + m["sam_checkpoint_sha256"])')"
 [ "$SAM_CONFIG_PIN" = "$SAM_CKPT|$SAM_EXPECTED_SHA256" ] || { echo "FATAL: SAM config path/hash pin differs from run_gpu.sh"; exit 1; }
 SAM_TMP="${SAM_CKPT}.part"
 if [ -s "$SAM_CKPT" ]; then
@@ -157,8 +157,8 @@ log "Protocol V3 gate: historical chain + executable snapshot must match live in
 "$PY" - <<'PY'
 from pathlib import Path
 
-from marsseg.eval.prereg import verify_protocol
-from marsseg.utils.config import load_yaml
+from aresseg.eval.prereg import verify_protocol
+from aresseg.utils.config import load_yaml
 
 root = Path.cwd()
 verify_protocol(
@@ -211,8 +211,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str((Path.cwd() / "scripts").resolve()))
-from marsseg.utils.capabilities import detect
-from marsseg.utils.config import load_config
+from aresseg.utils.capabilities import detect
+from aresseg.utils.config import load_config
 from run_experiment import _matching_complete_run, _resolved_git_sha, _runtime_code_fingerprint
 
 CONFIGS = {

@@ -6,16 +6,16 @@ import json
 
 import numpy as np
 
-from marsseg.utils import manifest as manifest_module
-from marsseg.utils.capabilities import detect
-from marsseg.utils.manifest import REPO_ROOT, write_manifest
-from marsseg.utils.seed import set_seed
+from aresseg.utils import manifest as manifest_module
+from aresseg.utils.capabilities import detect
+from aresseg.utils.manifest import REPO_ROOT, write_manifest
+from aresseg.utils.seed import set_seed
 
 
 def test_package_imports():
-    import marsseg
+    import aresseg
 
-    assert marsseg.__version__ == "0.1.0"
+    assert aresseg.__version__ == "0.1.0"
 
 
 def test_capabilities_profile():

@@ -33,19 +33,19 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import numpy as np  # noqa: E402
 
-from marsseg.data.ai4mars import IGNORE_INDEX, NUM_CLASSES, build_index  # noqa: E402
-from marsseg.data.dataset import SegDataset, class_pixel_counts, make_splits  # noqa: E402
-from marsseg.data.preflight import index_fingerprint  # noqa: E402
-from marsseg.data.transforms import eval_transform  # noqa: E402
-from marsseg.eval import aggregate, metrics  # noqa: E402
-from marsseg.utils.capabilities import detect  # noqa: E402
-from marsseg.utils.config import load_config  # noqa: E402
-from marsseg.utils.logging import get_logger  # noqa: E402
-from marsseg.utils.manifest import _git_sha, config_hash, write_manifest  # noqa: E402
-from marsseg.utils.results import append_results  # noqa: E402
-from marsseg.utils.seed import set_seed  # noqa: E402
+from aresseg.data.ai4mars import IGNORE_INDEX, NUM_CLASSES, build_index  # noqa: E402
+from aresseg.data.dataset import SegDataset, class_pixel_counts, make_splits  # noqa: E402
+from aresseg.data.preflight import index_fingerprint  # noqa: E402
+from aresseg.data.transforms import eval_transform  # noqa: E402
+from aresseg.eval import aggregate, metrics  # noqa: E402
+from aresseg.utils.capabilities import detect  # noqa: E402
+from aresseg.utils.config import load_config  # noqa: E402
+from aresseg.utils.logging import get_logger  # noqa: E402
+from aresseg.utils.manifest import _git_sha, config_hash, write_manifest  # noqa: E402
+from aresseg.utils.results import append_results  # noqa: E402
+from aresseg.utils.seed import set_seed  # noqa: E402
 
-log = get_logger("marsseg.run")
+log = get_logger("aresseg.run")
 
 FOUNDATION_VARIANTS = {"dinov3_sat": "finetuned", "sam": "region_oracle_upper_bound"}
 
@@ -474,7 +474,7 @@ def main(argv=None) -> int:
         return 0
 
     if model_name == "sam":
-        from marsseg.models.foundation import (
+        from aresseg.models.foundation import (
             build_foundation,
             gating_reasons,
             last_unavailable_reason,
@@ -539,7 +539,7 @@ def main(argv=None) -> int:
 
     # ---------- trainable arms (baseline / unet / deeplabv3plus / segformer / dinov3_sat) ----------
     if model_name == "majority":
-        from marsseg.models.zoo import build_model
+        from aresseg.models.zoo import build_model
 
         majority_counts = class_pixel_counts(index["train"], num_classes=NUM_CLASSES)
         majority_class = int(np.argmax(majority_counts))
@@ -650,7 +650,7 @@ def main(argv=None) -> int:
     from lightning.pytorch.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
     from lightning.pytorch.loggers import CSVLogger
 
-    from marsseg.train.lit import SegDataModule, SegLitModule
+    from aresseg.train.lit import SegDataModule, SegLitModule
 
     weights_source = _weights_source(mcfg)
     class_weights = _class_weights(splits["train"], cfg.get("class_weights", {}))
@@ -672,7 +672,7 @@ def main(argv=None) -> int:
     )
     if lit.model is None:  # gated dinov3_sat on CPU / missing token -> skip-and-log (5.4)
         if model_name == "dinov3_sat":
-            from marsseg.models.foundation import gating_reasons, last_unavailable_reason
+            from aresseg.models.foundation import gating_reasons, last_unavailable_reason
 
             reasons = gating_reasons("dinov3_sat")
             return _skip(

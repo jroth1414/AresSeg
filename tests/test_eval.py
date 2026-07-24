@@ -14,9 +14,9 @@ import pandas as pd
 import pytest
 import yaml
 
-from marsseg.data.ai4mars import CLASSES
-from marsseg.eval import aggregate, metrics, prereg, stats, verdict
-from marsseg.utils.results import RESULT_COLUMNS
+from aresseg.data.ai4mars import CLASSES
+from aresseg.eval import aggregate, metrics, prereg, stats, verdict
+from aresseg.utils.results import RESULT_COLUMNS
 
 REPO = Path(__file__).resolve().parents[1]
 B = 200  # small bootstrap for tests; production default stays 10000 (asserted below)
@@ -123,7 +123,7 @@ def test_paired_bootstrap_two_level_seed_and_image_semantics():
 
 def test_paired_bootstrap_default_constants():
     assert stats.N_RESAMPLES == 10_000 and stats.CI_LEVEL == 0.90
-    from marsseg.utils.seed import BOOTSTRAP_SEED
+    from aresseg.utils.seed import BOOTSTRAP_SEED
 
     assert BOOTSTRAP_SEED == 0
 
@@ -214,7 +214,7 @@ def test_aggregate_roundtrip():
 
 
 def test_h4_run_store_rows_never_collide_on_dedup_keys():
-    from marsseg.utils.results import DEDUP_KEYS
+    from aresseg.utils.results import DEDUP_KEYS
 
     counts = {
         "inter": np.array([50, 10, 25, 5]),
@@ -566,26 +566,26 @@ def _protocol_fixture_root(tmp_path: Path) -> Path:
     return root
 
 
-def test_protocol_v3_result_driving_path_set_is_complete():
+def test_live_result_driving_path_set_is_complete():
     expected = {
-        "src/marsseg/data/ai4mars.py",
-        "src/marsseg/data/dataset.py",
-        "src/marsseg/data/preflight.py",
-        "src/marsseg/data/transforms.py",
-        "src/marsseg/models/zoo.py",
-        "src/marsseg/models/foundation.py",
-        "src/marsseg/train/loss.py",
-        "src/marsseg/train/lit.py",
-        "src/marsseg/eval/aggregate.py",
-        "src/marsseg/eval/metrics.py",
-        "src/marsseg/eval/prereg.py",
-        "src/marsseg/eval/stats.py",
-        "src/marsseg/eval/verdict.py",
-        "src/marsseg/utils/capabilities.py",
-        "src/marsseg/utils/config.py",
-        "src/marsseg/utils/manifest.py",
-        "src/marsseg/utils/results.py",
-        "src/marsseg/utils/seed.py",
+        "src/aresseg/data/ai4mars.py",
+        "src/aresseg/data/dataset.py",
+        "src/aresseg/data/preflight.py",
+        "src/aresseg/data/transforms.py",
+        "src/aresseg/models/zoo.py",
+        "src/aresseg/models/foundation.py",
+        "src/aresseg/train/loss.py",
+        "src/aresseg/train/lit.py",
+        "src/aresseg/eval/aggregate.py",
+        "src/aresseg/eval/metrics.py",
+        "src/aresseg/eval/prereg.py",
+        "src/aresseg/eval/stats.py",
+        "src/aresseg/eval/verdict.py",
+        "src/aresseg/utils/capabilities.py",
+        "src/aresseg/utils/config.py",
+        "src/aresseg/utils/manifest.py",
+        "src/aresseg/utils/results.py",
+        "src/aresseg/utils/seed.py",
         "scripts/check_data.py",
         "scripts/run_experiment.py",
         "scripts/run_gpu.sh",
@@ -635,7 +635,7 @@ def _seal_test_protocol(tmp_path: Path):
         json.loads(path.read_text(encoding="utf-8"))
     )
     payload = json.loads(path.read_text(encoding="utf-8"))
-    assert payload["schema"] == "marsseg.protocol_snapshot.v3"
+    assert payload["schema"] == prereg.PROTOCOL_V3_SCHEMA
     assert set(payload["historical_artifact_sha256"]) == {
         prereg.PREREG_PATH.as_posix(),
         prereg.SHA_PATH.as_posix(),
@@ -664,14 +664,14 @@ def test_protocol_v3_rejects_decision_config_mutations(tmp_path, mutation):
 @pytest.mark.parametrize(
     "relative",
     [
-        Path("src/marsseg/eval/stats.py"),
-        Path("src/marsseg/models/zoo.py"),
-        Path("src/marsseg/train/lit.py"),
-        Path("src/marsseg/data/preflight.py"),
-        Path("src/marsseg/utils/config.py"),
-        Path("src/marsseg/utils/manifest.py"),
-        Path("src/marsseg/utils/results.py"),
-        Path("src/marsseg/utils/capabilities.py"),
+        Path("src/aresseg/eval/stats.py"),
+        Path("src/aresseg/models/zoo.py"),
+        Path("src/aresseg/train/lit.py"),
+        Path("src/aresseg/data/preflight.py"),
+        Path("src/aresseg/utils/config.py"),
+        Path("src/aresseg/utils/manifest.py"),
+        Path("src/aresseg/utils/results.py"),
+        Path("src/aresseg/utils/capabilities.py"),
         Path("scripts/run_gpu.sh"),
     ],
 )

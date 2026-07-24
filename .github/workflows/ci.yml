@@ -50,6 +50,4 @@ jobs:
         run: python -m black --check .
 
       - name: Pytest (CPU, no network)
-        env:
-          MARSSEG_NO_NETWORK: "1"
         run: python -m pytest -q

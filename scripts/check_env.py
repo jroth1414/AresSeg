@@ -1,4 +1,4 @@
-"""Environment/capability report for the marsseg project. Used at run start + CI smoke.
+"""Environment/capability report for the aresseg project. Used at run start + CI smoke.
 
 Prints the detected profile + key CV package versions. Core smoke EXCLUDES the gated foundation
 packages (segment-anything) so a missing optional wheel never fails the gate.
@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from marsseg.utils.capabilities import detect  # noqa: E402
+from aresseg.utils.capabilities import detect  # noqa: E402
 
 CORE_SMOKE = [
     "numpy",
